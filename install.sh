@@ -92,7 +92,7 @@ fi
 function Xwan_Banner() {
 clear
 echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
-echo -e "${BLUE}│${WHITE}  \033[38;5;196m⁙\033[38;5;202m⁙\033[38;5;208m⁙\033[38;5;214m⁙\033[38;5;220m⁙\033[38;5;226m⁙\033[38;5;190m⁙\033[38;5;154m⁙\033[38;5;118m⁙\033[38;5;82m⁙\033[38;5;46m⁙\033[38;5;47m⁙\033[38;5;48m⁙\033[38;5;49m⁙${WHITE} ZIVPN INSTALLER \033[38;5;87m⁙\033[38;5;86m⁙\033[38;5;85m⁙\033[38;5;84m⁙\033[38;5;83m⁙\033[38;5;44m⁙\033[38;5;43m⁙\033[38;5;42m⁙\033[38;5;41m⁙\033[38;5;40m⁙\033[38;5;39m⁙\033[38;5;38m⁙\033[38;5;37m⁙\033[38;5;36m⁙${WHITE}   ${BLUE}│${NC}"
+echo -e "${BLUE}│${WHITE}  \033[38;5;196m⁙\033[38;5;202m⁙\033[38;5;208m⁙\033[38;5;214m⁙\033[38;5;220m⁙\033[38;5;226m⁙\033[38;5;190m⁙\033[38;5;154m⁙\033[38;5;118m⁙\033[38;5;82m⁙\033[38;5;46m⁙\033[38;5;47m⁙\033[38;5;48m⁙\033[38;5;49m⁙${WHITE} ZIVPN INSTALLER \033[38;5;87m⁙\033[38;5;86m⁙\033[38;5;85m⁙\033[38;5;84m⁙\033[38;5;83m⁙\033[38;5;44m⁙\033[38;5;43m⁙\033[38;5;42m⁙\033[38;5;41m⁙\033[38;5;40m⁙\033[38;5;39m⁙\033[38;5;38m⁙\033[38;5;37m⁙\033[38;5;36m⁙${WHITE}  ${BLUE}│${NC}"
 echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
 }
 
@@ -268,8 +268,37 @@ echo ""
 
 run_silent "Downloading Menu Manager" "wget -q ${GITHUB_REPO}/menu.sh -O /usr/local/bin/menu && chmod +x /usr/local/bin/menu"
 sed -i 's/\r$//' /usr/local/bin/menu
+
+# ==================== AUTO MENU ON LOGIN ====================
+echo ""
+echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
+echo -e "${BLUE}│${CYAN}         Setting Auto Menu on Login${FONT}"
+echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+echo ""
+
+# Hapus semua konfigurasi lama
+sed -i '/# ========== AUTO MENU ZIVPN ==========/,/# ======================================/d' /root/.bashrc 2>/dev/null
+sed -i '/# ========== AUTO MENU ZIVPN ==========/,/# ======================================/d' /root/.profile 2>/dev/null
+sed -i '/alias menu=/d' /root/.bashrc 2>/dev/null
+rm -f /etc/profile.d/zivpn-menu.sh 2>/dev/null
+
+# Gunakan ONLY profile.d method (paling bersih dan reliable)
+cat > /etc/profile.d/zivpn-menu.sh << 'EOF'
+#!/bin/bash
+# ZiVPN Auto Menu - Hanya tampil sekali saat login
+if [ -t 0 ] && [ -f /usr/local/bin/menu ] && [ -z "$ZIVPN_MENU_SHOWN" ]; then
+    export ZIVPN_MENU_SHOWN=1
+    clear
+    /usr/local/bin/menu
+fi
+EOF
+chmod +x /etc/profile.d/zivpn-menu.sh
+
+# Tambahkan alias untuk manual menu
 echo "alias menu='bash /usr/local/bin/menu'" >> /root/.bashrc
-source ~/.bashrc 2>/dev/null
+
+echo -e "${Green}  ✓ Auto menu on login has been configured${NC}"
+echo ""
 
 rm -f "$0" install.tmp install.log &>/dev/null
 
