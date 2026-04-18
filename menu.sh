@@ -12,8 +12,7 @@ NC='\e[0m'
 CYAN="\033[96;1m"
 WHITE="\033[97;1m"
 
-# Get server info
-MYIP=$(curl -sS ipv4.icanhazip.com 2>/dev/null)
+MYIP=$(curl -sS ipv4.icanhazip.com)
 domain=$(cat /etc/xray/domain 2>/dev/null || cat /etc/zivpn/domain 2>/dev/null || echo "Tidak ada")
 ISP=$(cat /etc/xray/isp 2>/dev/null || echo "Unknown")
 CITY=$(cat /etc/xray/city 2>/dev/null || echo "Unknown")
@@ -22,7 +21,6 @@ TIMEZONE=$(date +'%H:%M:%S')
 MODEL=$(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g')
 SERONLINE=$(uptime -p | cut -d " " -f 2-10000)
 
-# ZiVPN Config
 ZIVPN_CONFIG="/etc/zivpn/config.json"
 ZIVPN_USERS="/etc/zivpn/users.json"
 ZIVPN_DOMAIN="/etc/zivpn/domain"
@@ -32,14 +30,6 @@ function check_zivpn_status() {
     if systemctl is-active --quiet zivpn 2>/dev/null; then
         echo -e "${Green}ON${NC}"
     elif pgrep -x "zivpn" > /dev/null; then
-        echo -e "${Green}ON${NC}"
-    else
-        echo -e "${RED}OFF${NC}"
-    fi
-}
-
-function check_api_status() {
-    if systemctl is-active --quiet zivpn-api 2>/dev/null; then
         echo -e "${Green}ON${NC}"
     else
         echo -e "${RED}OFF${NC}"
@@ -81,15 +71,13 @@ function Service_System_Operating() {
 
 function Service_Status() {
     echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
-    echo -e "${BLUE}|${NC}${YELLOW} ZIVPN : $(check_zivpn_status) ${BLUE}|${NC}${YELLOW} API : $(check_api_status) ${BLUE}|${NC}${YELLOW} PORT : $ZIVPN_PORT ${BLUE}|${NC}${YELLOW} USERS : $(get_total_users) (Active: $(get_active_users)) ${BLUE}| ${NC}"
+    echo -e "${BLUE}|${NC}${YELLOW} ZIVPN : $(check_zivpn_status) ${BLUE}|${NC}${YELLOW} PORT : $ZIVPN_PORT ${BLUE}|${NC}${YELLOW} USERS : $(get_total_users) (Active: $(get_active_users)) ${BLUE}| ${NC}"
     echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
 }
 
 function Details_Clients_Name() {
     echo -e "${BLUE}   ┌───────────────────────────────────────────┐${NC}"
-    echo -e "${BLUE}   │${WHITE} VERSION    : $(cat /opt/.ver 2>/dev/null || echo "1.0")    ${NC}"
-    echo -e "${BLUE}   │${WHITE} STATUS     :\033[92;1m (active)    ${NC}"
-    echo -e "${BLUE}   │${WHITE} CLIENTS    :\033[91;1m $(cat /usr/bin/user 2>/dev/null || echo "PX_STORE")      ${NC}"
+    echo -e "${BLUE}   │${WHITE} CLIENTS    : $(cat /usr/bin/user 2>/dev/null || echo "PX_STORE")      ${NC}"
     echo -e "${BLUE}   │${WHITE} EXPIRY     : $(cat /usr/bin/e 2>/dev/null || echo "Lifetime") Day ${NC}"
     echo -e "${BLUE}   └───────────────────────────────────────────┘${NC}"
 }
@@ -157,7 +145,6 @@ PYTHON
     echo -e "   Password : ${YELLOW}$password${NC}"
     echo -e "   Expired  : ${YELLOW}$exp_date${NC}"
     echo -e "   IP Limit : ${YELLOW}${iplimit:-0}${NC}"
-    echo -e "   Domain   : ${YELLOW}$(cat $ZIVPN_DOMAIN 2>/dev/null)${NC}"
     
     systemctl restart zivpn 2>/dev/null
     echo ""
@@ -380,7 +367,6 @@ function Select_Display() {
     esac
 }
 
-# Main execution
 Zivpn_Banner
 Service_System_Operating
 Service_Status
