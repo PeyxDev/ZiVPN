@@ -1,12 +1,16 @@
 #!/bin/bash
 
 # Colors
-GREEN="\033[1;32m"
-YELLOW="\033[1;33m"
-CYAN="\033[1;36m"
+REDBLD="\033[0m\033[91;1m"
+Green="\e[92;1m"
 RED="\033[1;31m"
-BLUE="\033[1;34m"
-RESET="\033[0m"
+YELLOW="\033[33;1m"
+BLUE="\033[36;1m"
+FONT="\033[0m"
+GREENBG="\033[42;37m"
+REDBG="\033[41;37m"
+NC='\e[0m'
+CYAN="\033[1;36m"
 BOLD="\033[1m"
 GRAY="\033[1;30m"
 
@@ -14,6 +18,29 @@ GRAY="\033[1;30m"
 ZIVPN_UDP_PORT="5667"
 ZIVPN_API_PORT="8585"
 GITHUB_REPO="https://raw.githubusercontent.com/PeyxDev/ZiVPN/main"
+
+function print_install() {
+echo -e "${BLUE} ┌─────────────────────────────────────────────────┐${FONT}"
+echo -e "${BLUE} │${YELLOW} # $1${FONT}"
+echo -e "${BLUE} └─────────────────────────────────────────────────┘${FONT}"
+sleep 1
+}
+
+function print_success() {
+if [[ 0 -eq $? ]]; then
+echo -e "${BLUE} ┌─────────────────────────────────────────────────┐${FONT}"
+echo -e "${BLUE} │${Green} ✓ $1 berhasil dipasang${FONT}"
+echo -e "${BLUE} └─────────────────────────────────────────────────┘${FONT}"
+sleep 2
+fi
+}
+
+function print_error() {
+echo -e "${BLUE} ┌─────────────────────────────────────────────────┐${FONT}"
+echo -e "${BLUE} │${RED} ✗ $1${FONT}"
+echo -e "${BLUE} └─────────────────────────────────────────────────┘${FONT}"
+exit 1
+}
 
 print_task() {
   echo -ne "${GRAY}•${RESET} $1..."
@@ -41,21 +68,89 @@ run_silent() {
   fi
 }
 
+# ==================== CEK IP FUNCTION ====================
+CEKIP() {
 clear
-echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo -e "${BOLD}         ZiVPN UDP Installer - PeyxDev Edition${RESET}"
-echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo -e "${BLUE} ┌─────────────────────────────────────────────────┐${FONT}"
+echo -e "${BLUE} │${YELLOW}         Verifying IP Authorization${FONT}"
+echo -e "${BLUE} └─────────────────────────────────────────────────┘${FONT}"
+echo ""
+  
+MYIP=$(curl -sS ipv4.icanhazip.com)
+echo -e "${BLUE} │${NC} Your IP Address: ${CYAN}$MYIP${NC}"
+  
+IPVPS=$(curl -sS https://raw.githubusercontent.com/PeyxDev/esce/main/ipx | grep "$MYIP" | awk '{print $4}')
+  
+if [[ "$MYIP" == "$IPVPS" ]]; then
+  echo -e "${BLUE} │${Green} ✓ IP Authorized!${NC}"
+  echo -e "${BLUE} │${Green} ✓ Proceeding with installation...${NC}"
+  echo -e "${BLUE} └─────────────────────────────────────────────────┘${FONT}"
+  echo ""
+  sleep 2
+  return 0
+else
+  echo -e "${BLUE} │${RED} ✗ IP NOT AUTHORIZED!${NC}"
+  echo -e "${BLUE} │${RED} ✗ Your IP (${MYIP}) is not in the allowed list.${NC}"
+  echo -e "${BLUE} │${RED} ✗ Installation cannot proceed.${NC}"
+  echo ""
+  echo -e "${BLUE} │${YELLOW} Please contact administrator to get your IP whitelisted.${NC}"
+  echo -e "${BLUE} │${YELLOW} Telegram: https://t.me/PeyxDev${NC}"
+  echo -e "${BLUE} └─────────────────────────────────────────────────┘${FONT}"
+  echo ""
+  exit 1
+fi
+}
+
+function Xwan_Banner() {
+clear
+echo -e "\033[36;1m┌─────────────────────────────────────────────────┐\033[0m"
+echo -e "\033[36;1m│\e[97m  \033[38;5;196m⁙\033[38;5;202m⁙\033[38;5;208m⁙\033[38;5;214m⁙\033[38;5;220m⁙\033[38;5;226m⁙\033[38;5;190m⁙\033[38;5;154m⁙\033[38;5;118m⁙\033[38;5;82m⁙\033[38;5;46m⁙\033[38;5;47m⁙\033[38;5;48m⁙\033[38;5;49m⁙\033[97m ZiVPN INSTALLER \033[38;5;87m⁙\033[38;5;86m⁙\033[38;5;85m⁙\033[38;5;84m⁙\033[38;5;83m⁙\033[38;5;44m⁙\033[38;5;43m⁙\033[38;5;42m⁙\033[38;5;41m⁙\033[38;5;40m⁙\033[38;5;39m⁙\033[38;5;38m⁙\033[38;5;37m⁙\033[38;5;36m⁙\033[97m   \033[36;1m│\033[0m"
+echo -e "\033[36;1m└─────────────────────────────────────────────────┘\033[0m"
+}
+
+function Domain_Input() {
+echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
+echo -e "${BLUE}│              Domain Configuration${FONT}"
+echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+echo ""
+while true; do
+  read -p "   Enter Domain (e.g., vpn.pxstore.web.id): " domain
+  if [[ -n "$domain" ]]; then
+    break
+  fi
+done
+echo ""
+echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
+echo -e "${BLUE}│${CYAN}   UDP Port: ${ZIVPN_UDP_PORT}${FONT}"
+echo -e "${BLUE}│${CYAN}   API Port: ${ZIVPN_API_PORT}${FONT}"
+echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+echo ""
+}
+
+function API_Key_Input() {
+echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
+echo -e "${BLUE}│              API Key Configuration${FONT}"
+echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
 echo ""
 
-if [[ "$(uname -s)" != "Linux" ]] || [[ "$(uname -m)" != "x86_64" ]]; then
-  print_fail "System not supported (Linux AMD64 only)"
+generated_key=$(openssl rand -hex 16)
+echo -e "${BLUE}│${NC}   Generated Key: ${CYAN}$generated_key${NC}"
+read -p "   Enter API Key (Press Enter to use generated): " input_key
+if [[ -z "$input_key" ]]; then
+  api_key="$generated_key"
+else
+  api_key="$input_key"
 fi
+echo -e "${BLUE}│${NC}   Using Key: ${Green}$api_key${NC}"
+echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+echo ""
+}
 
-if [ -f /usr/local/bin/zivpn ]; then
-  echo -e "${YELLOW}! ZiVPN detected. Reinstalling...${RESET}"
-  systemctl stop zivpn.service &>/dev/null
-  systemctl stop zivpn-api.service &>/dev/null
-fi
+function Installation_Process() {
+print_install "Installing ZiVPN Server"
+
+systemctl stop zivpn.service &>/dev/null
+systemctl stop zivpn-api.service &>/dev/null
 
 run_silent "Updating system" "apt-get update -y"
 
@@ -65,41 +160,6 @@ else
   run_silent "Installing dependencies" "apt-get install -y wget curl openssl jq ufw"
 fi
 
-echo ""
-echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo -e "${BOLD}         Domain Configuration${RESET}"
-echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo ""
-
-while true; do
-  read -p "   Enter Domain (e.g., vpn.pxstore.web.id): " domain
-  if [[ -n "$domain" ]]; then
-    break
-  fi
-done
-
-echo ""
-echo -e "${CYAN}   UDP Port: ${ZIVPN_UDP_PORT}${RESET}"
-echo -e "${CYAN}   API Port: ${ZIVPN_API_PORT}${RESET}"
-echo ""
-
-echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo -e "${BOLD}         API Key Configuration${RESET}"
-echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo ""
-
-generated_key=$(openssl rand -hex 16)
-echo -e "   Generated Key: ${CYAN}$generated_key${RESET}"
-read -p "   Enter API Key (Press Enter to use generated): " input_key
-if [[ -z "$input_key" ]]; then
-  api_key="$generated_key"
-else
-  api_key="$input_key"
-fi
-echo -e "   Using Key: ${GREEN}$api_key${RESET}"
-echo ""
-
-systemctl stop zivpn.service &>/dev/null
 run_silent "Downloading Core" "wget -q https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/udp-zivpn-linux-amd64 -O /usr/local/bin/zivpn && chmod +x /usr/local/bin/zivpn"
 
 mkdir -p /etc/zivpn
@@ -158,8 +218,7 @@ mkdir -p /etc/zivpn/api
 run_silent "Setting up API" "wget -q ${GITHUB_REPO}/zivpn-api.go -O /etc/zivpn/api/zivpn-api.go && wget -q ${GITHUB_REPO}/go.mod -O /etc/zivpn/api/go.mod"
 
 cd /etc/zivpn/api
-# Update API port
-sed -i "s/Port = \":8585\"/Port = \":${ZIVPN_API_PORT}\"/" zivpn-api.go
+sed -i "s/Port = \":8080\"/Port = \":${ZIVPN_API_PORT}\"/" zivpn-api.go
 
 if go build -o zivpn-api zivpn-api.go &>/dev/null; then
   print_done "Compiling API"
@@ -194,45 +253,67 @@ iptables -t nat -A PREROUTING -i "$iface" -p udp --dport 6000:19999 -j DNAT --to
 ufw allow 6000:19999/udp &>/dev/null
 ufw allow ${ZIVPN_UDP_PORT}/udp &>/dev/null
 ufw allow ${ZIVPN_API_PORT}/tcp &>/dev/null
+}
 
-# ==================== DOWNLOAD MENU MANAGER ====================
-echo ""
-echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo -e "${BOLD}         Installing Menu Manager${RESET}"
-echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo ""
-
+function Menu_Install() {
 run_silent "Downloading Menu Manager" "wget -q ${GITHUB_REPO}/menu.sh -O /usr/local/sbin/m-zivpn && chmod +x /usr/local/sbin/m-zivpn"
 sed -i 's/\r$//' /usr/local/sbin/m-zivpn
 echo "alias m-zivpn='bash /usr/local/sbin/m-zivpn'" >> /root/.bashrc
 source ~/.bashrc 2>/dev/null
+}
+
+function Show_Result() {
+clear
+echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
+echo -e "${BLUE}│${Green}              INSTALLATION COMPLETE!${FONT}"
+echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+echo ""
+echo -e "${BLUE}│${CYAN}  Domain      : ${domain}${FONT}"
+echo -e "${BLUE}│${CYAN}  UDP Port    : ${ZIVPN_UDP_PORT}${FONT}"
+echo -e "${BLUE}│${CYAN}  API Port    : ${ZIVPN_API_PORT}${FONT}"
+echo -e "${BLUE}│${CYAN}  API Key     : ${api_key}${FONT}"
+echo -e "${BLUE}│${CYAN}  Config      : /etc/zivpn/config.json${FONT}"
+echo -e "${BLUE}│${CYAN}  Users DB    : /etc/zivpn/users.json${FONT}"
+echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+echo ""
+echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
+echo -e "${BLUE}│${YELLOW}  Menu Manager:${FONT}"
+echo -e "${BLUE}│${Green}    m-zivpn${FONT}"
+echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+echo ""
+echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
+echo -e "${BLUE}│${YELLOW}  Commands:${FONT}"
+echo -e "${BLUE}│${NC}    systemctl start/stop/restart zivpn${FONT}"
+echo -e "${BLUE}│${NC}    systemctl start/stop/restart zivpn-api${FONT}"
+echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+echo ""
+echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
+echo -e "${BLUE}│${GRAY}  Telegram : https://t.me/PeyxDev${FONT}"
+echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+echo ""
+}
+
+# ==================== MAIN INSTALLATION ====================
+Xwan_Banner
+CEKIP
+
+if [[ "$(uname -s)" != "Linux" ]] || [[ "$(uname -m)" != "x86_64" ]]; then
+  print_error "System not supported (Linux AMD64 only)"
+fi
+
+if [ -f /usr/local/bin/zivpn ]; then
+  echo -e "${YELLOW}! ZiVPN detected. Reinstalling...${RESET}"
+  systemctl stop zivpn.service &>/dev/null
+  systemctl stop zivpn-api.service &>/dev/null
+fi
+
+Domain_Input
+API_Key_Input
+Installation_Process
+Menu_Install
+Show_Result
 
 rm -f "$0" install.tmp install.log &>/dev/null
-
-clear
-echo ""
-echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo -e "${GREEN}              INSTALLATION COMPLETE!${RESET}"
-echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo ""
-echo -e "${CYAN}  Domain      : ${domain}${RESET}"
-echo -e "${CYAN}  UDP Port    : ${ZIVPN_UDP_PORT}${RESET}"
-echo -e "${CYAN}  API Port    : ${ZIVPN_API_PORT}${RESET}"
-echo -e "${CYAN}  API Key     : ${api_key}${RESET}"
-echo -e "${CYAN}  Config      : /etc/zivpn/config.json${RESET}"
-echo -e "${CYAN}  Users DB    : /etc/zivpn/users.json${RESET}"
-echo ""
-echo -e "${BOLD}  Menu Manager:${RESET}"
-echo -e "    ${GREEN}m-zivpn${RESET}"
-echo ""
-echo -e "${BOLD}  Commands:${RESET}"
-echo -e "    ${YELLOW}systemctl start/stop/restart zivpn${RESET}"
-echo -e "    ${YELLOW}systemctl start/stop/restart zivpn-api${RESET}"
-echo ""
-echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo -e "${GRAY}  Telegram : https://t.me/PeyxDev${RESET}"
-echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo ""
 
 # Run menu
 bash /usr/local/sbin/m-zivpn
