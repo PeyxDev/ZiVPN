@@ -113,11 +113,11 @@ run_silent "Downloading ZiVPN Core" "wget -q https://github.com/zahidbd2/udp-ziv
 mkdir -p $ZIVPN_DIR
 echo "$domain" > $ZIVPN_DIR/domain
 
-cat > $ZIVPN_DIR/config.json << EOF
+cat > $ZIVPN_DIR/config.json << 'EOF'
 {
-    "listen": ":${ZIVPN_PORT}",
-    "cert": "$ZIVPN_DIR/zivpn.crt",
-    "key": "$ZIVPN_DIR/zivpn.key",
+    "listen": ":5667",
+    "cert": "/etc/zivpn/zivpn.crt",
+    "key": "/etc/zivpn/zivpn.key",
     "obfs": "http",
     "auth": {
         "mode": "password",
@@ -131,7 +131,7 @@ run_silent "Generating SSL Certificate" "openssl req -new -newkey rsa:4096 -days
 echo "[]" > $ZIVPN_DIR/users.json
 
 # Create systemd service
-cat > /etc/systemd/system/zivpn.service << EOF
+cat > /etc/systemd/system/zivpn.service << 'EOF'
 [Unit]
 Description=ZiVPN UDP VPN Server
 After=network.target
@@ -139,8 +139,8 @@ After=network.target
 [Service]
 Type=simple
 User=root
-WorkingDirectory=$ZIVPN_DIR
-ExecStart=/usr/local/bin/zivpn server -c $ZIVPN_DIR/config.json
+WorkingDirectory=/etc/zivpn
+ExecStart=/usr/local/bin/zivpn server -c /etc/zivpn/config.json
 Restart=always
 RestartSec=3
 LimitNOFILE=65535
