@@ -55,7 +55,6 @@ if [ -f /usr/local/bin/zivpn ]; then
   echo -e "${YELLOW}! ZiVPN detected. Reinstalling...${RESET}"
   systemctl stop zivpn.service &>/dev/null
   systemctl stop zivpn-api.service &>/dev/null
-  systemctl stop zivpn-bot.service &>/dev/null
 fi
 
 run_silent "Updating system" "apt-get update -y"
@@ -159,6 +158,7 @@ mkdir -p /etc/zivpn/api
 run_silent "Setting up API" "wget -q ${GITHUB_REPO}/zivpn-api.go -O /etc/zivpn/api/zivpn-api.go && wget -q ${GITHUB_REPO}/go.mod -O /etc/zivpn/api/go.mod"
 
 cd /etc/zivpn/api
+# Update API port
 sed -i "s/Port = \":8585\"/Port = \":${ZIVPN_API_PORT}\"/" zivpn-api.go
 
 if go build -o zivpn-api zivpn-api.go &>/dev/null; then
@@ -184,75 +184,6 @@ RestartSec=3
 [Install]
 WantedBy=multi-user.target
 EOF
-
-# Telegram Bot Configuration
-echo ""
-echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo -e "${BOLD}         Telegram Bot Configuration${RESET}"
-echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo ""
-echo -e "${GRAY}   (Leave empty to skip)${RESET}"
-read -p "   Bot Token: " bot_token
-read -p "   Admin ID : " admin_id
-
-if [[ -n "$bot_token" ]] && [[ -n "$admin_id" ]]; then
-  echo ""
-  echo "   Select Bot Type:"
-  echo "   1) Free (Admin Only / Public Mode)"
-  echo "   2) Paid (Pakasir Payment Gateway)"
-  read -p "   Choice [1]: " bot_type
-  bot_type=${bot_type:-1}
-
-  if [[ "$bot_type" == "2" ]]; then
-    read -p "   Pakasir Project Slug: " pakasir_slug
-    read -p "   Pakasir API Key     : " pakasir_key
-    read -p "   Daily Price (IDR)   : " daily_price
-    read -p "   Default IP Limit    : " ip_limit
-    ip_limit=${ip_limit:-1}
-    
-    echo "{\"bot_token\": \"$bot_token\", \"admin_id\": $admin_id, \"mode\": \"public\", \"domain\": \"$domain\", \"pakasir_slug\": \"$pakasir_slug\", \"pakasir_api_key\": \"$pakasir_key\", \"daily_price\": $daily_price, \"default_ip_limit\": $ip_limit}" > /etc/zivpn/bot-config.json
-    bot_file="zivpn-paid-bot.go"
-  else
-    read -p "   Bot Mode (public/private) [default: private]: " bot_mode
-    bot_mode=${bot_mode:-private}
-    
-    echo "{\"bot_token\": \"$bot_token\", \"admin_id\": $admin_id, \"mode\": \"$bot_mode\", \"domain\": \"$domain\"}" > /etc/zivpn/bot-config.json
-    bot_file="zivpn-bot.go"
-  fi
-  
-  run_silent "Downloading Bot" "wget -q ${GITHUB_REPO}/$bot_file -O /etc/zivpn/api/$bot_file"
-  
-  cd /etc/zivpn/api
-  run_silent "Downloading Bot Deps" "go get github.com/go-telegram-bot-api/telegram-bot-api/v5"
-  
-  if go build -o zivpn-bot "$bot_file" &>/dev/null; then
-    print_done "Compiling Bot"
-    
-    cat <<EOF > /etc/systemd/system/zivpn-bot.service
-[Unit]
-Description=ZiVPN Telegram Bot
-After=network.target zivpn-api.service
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/etc/zivpn/api
-ExecStart=/etc/zivpn/api/zivpn-bot
-Restart=always
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
-EOF
-    systemctl enable zivpn-bot.service &>/dev/null
-    systemctl start zivpn-bot.service &>/dev/null
-  else
-    print_fail "Compiling Bot"
-  fi
-else
-  print_task "Skipping Bot Setup"
-  echo ""
-fi
 
 # Start services
 run_silent "Starting Services" "systemctl daemon-reload && systemctl enable zivpn.service && systemctl start zivpn.service && systemctl enable zivpn-api.service && systemctl start zivpn-api.service"
