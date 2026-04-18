@@ -10,6 +10,11 @@ RESET="\033[0m"
 BOLD="\033[1m"
 GRAY="\033[1;30m"
 
+# ==================== VARIABLES ====================
+ZIVPN_UDP_PORT="5667"
+ZIVPN_API_PORT="8585"
+GITHUB_REPO="https://raw.githubusercontent.com/PeyxDev/ZiVPN/main"
+
 print_task() {
   echo -ne "${GRAY}•${RESET} $1..."
 }
@@ -37,8 +42,9 @@ run_silent() {
 }
 
 clear
-echo -e "${BOLD}ZiVPN UDP Installer${RESET}"
-echo -e "${GRAY}PeyxDev Edition${RESET}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo -e "${BOLD}         ZiVPN UDP Installer - PeyxDev Edition${RESET}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo ""
 
 if [[ "$(uname -s)" != "Linux" ]] || [[ "$(uname -m)" != "x86_64" ]]; then
@@ -52,34 +58,46 @@ if [ -f /usr/local/bin/zivpn ]; then
   systemctl stop zivpn-bot.service &>/dev/null
 fi
 
-run_silent "Updating system" "sudo apt-get update"
+run_silent "Updating system" "apt-get update -y"
 
 if ! command -v go &> /dev/null; then
-  run_silent "Installing dependencies" "sudo apt-get install -y golang git"
+  run_silent "Installing dependencies" "apt-get install -y golang git wget curl openssl jq ufw"
 else
-  print_done "Dependencies ready"
+  run_silent "Installing dependencies" "apt-get install -y wget curl openssl jq ufw"
 fi
 
 echo ""
-echo -ne "${BOLD}Domain Configuration${RESET}\n"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo -e "${BOLD}         Domain Configuration${RESET}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo ""
+
 while true; do
-  read -p "Enter Domain: " domain
+  read -p "   Enter Domain (e.g., vpn.pxstore.web.id): " domain
   if [[ -n "$domain" ]]; then
     break
   fi
 done
+
+echo ""
+echo -e "${CYAN}   UDP Port: ${ZIVPN_UDP_PORT}${RESET}"
+echo -e "${CYAN}   API Port: ${ZIVPN_API_PORT}${RESET}"
 echo ""
 
-echo -ne "${BOLD}API Key Configuration${RESET}\n"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo -e "${BOLD}         API Key Configuration${RESET}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo ""
+
 generated_key=$(openssl rand -hex 16)
-echo -e "Generated Key: ${CYAN}$generated_key${RESET}"
-read -p "Enter API Key (Press Enter to use generated): " input_key
+echo -e "   Generated Key: ${CYAN}$generated_key${RESET}"
+read -p "   Enter API Key (Press Enter to use generated): " input_key
 if [[ -z "$input_key" ]]; then
   api_key="$generated_key"
 else
   api_key="$input_key"
 fi
-echo -e "Using Key: ${GREEN}$api_key${RESET}"
+echo -e "   Using Key: ${GREEN}$api_key${RESET}"
 echo ""
 
 systemctl stop zivpn.service &>/dev/null
@@ -88,10 +106,14 @@ run_silent "Downloading Core" "wget -q https://github.com/zahidbd2/udp-zivpn/rel
 mkdir -p /etc/zivpn
 echo "$domain" > /etc/zivpn/domain
 echo "$api_key" > /etc/zivpn/apikey
-run_silent "Configuring" "wget -q https://raw.githubusercontent.com/PeyxDev/ZiVPN/main/config.json -O /etc/zivpn/config.json"
+echo "[]" > /etc/zivpn/users.json
 
-run_silent "Generating SSL" "openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj '/C=ID/ST=Jawa Barat/L=Bandung/O=AutoFTbot/OU=IT Department/CN=$domain' -keyout /etc/zivpn/zivpn.key -out /etc/zivpn/zivpn.crt"
+run_silent "Configuring" "wget -q ${GITHUB_REPO}/config.json -O /etc/zivpn/config.json"
+sed -i "s/:5667/:${ZIVPN_UDP_PORT}/" /etc/zivpn/config.json
 
+run_silent "Generating SSL" "openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj '/C=ID/ST=Jawa Barat/L=Bandung/O=AutoFTbot/OU=IT Department/CN=$domain' -keyout /etc/zivpn/zivpn.key -out /etc/zivpn/zivpn.crt 2>/dev/null"
+
+# Sysctl optimization
 cat >> /etc/sysctl.conf <<END
 net.core.default_qdisc=fq
 net.ipv4.tcp_congestion_control=bbr
@@ -109,6 +131,7 @@ fs.file-max=1000000
 END
 sysctl -p &>/dev/null
 
+# Create systemd service for ZiVPN
 cat <<EOF > /etc/systemd/system/zivpn.service
 [Unit]
 Description=ZIVPN UDP VPN Server
@@ -131,16 +154,20 @@ NoNewPrivileges=true
 WantedBy=multi-user.target
 EOF
 
+# Setup API
 mkdir -p /etc/zivpn/api
-run_silent "Setting up API" "wget -q https://raw.githubusercontent.com/PeyxDev/ZiVPN/main/zivpn-api.go -O /etc/zivpn/api/zivpn-api.go && wget -q https://raw.githubusercontent.com/PeyxDev/ZiVPN/main/go.mod -O /etc/zivpn/api/go.mod"
+run_silent "Setting up API" "wget -q ${GITHUB_REPO}/zivpn-api.go -O /etc/zivpn/api/zivpn-api.go && wget -q ${GITHUB_REPO}/go.mod -O /etc/zivpn/api/go.mod"
 
 cd /etc/zivpn/api
+sed -i "s/Port = \":8585\"/Port = \":${ZIVPN_API_PORT}\"/" zivpn-api.go
+
 if go build -o zivpn-api zivpn-api.go &>/dev/null; then
   print_done "Compiling API"
 else
   print_fail "Compiling API"
 fi
 
+# Create API service
 cat <<EOF > /etc/systemd/system/zivpn-api.service
 [Unit]
 Description=ZiVPN Golang API Service
@@ -158,38 +185,42 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 
+# Telegram Bot Configuration
 echo ""
-echo -ne "${BOLD}Telegram Bot Configuration${RESET}\n"
-echo -ne "${GRAY}(Leave empty to skip)${RESET}\n"
-read -p "Bot Token: " bot_token
-read -p "Admin ID : " admin_id
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo -e "${BOLD}         Telegram Bot Configuration${RESET}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo ""
+echo -e "${GRAY}   (Leave empty to skip)${RESET}"
+read -p "   Bot Token: " bot_token
+read -p "   Admin ID : " admin_id
 
 if [[ -n "$bot_token" ]] && [[ -n "$admin_id" ]]; then
   echo ""
-  echo "Select Bot Type:"
-  echo "1) Free (Admin Only / Public Mode)"
-  echo "2) Paid (Pakasir Payment Gateway)"
-  read -p "Choice [1]: " bot_type
+  echo "   Select Bot Type:"
+  echo "   1) Free (Admin Only / Public Mode)"
+  echo "   2) Paid (Pakasir Payment Gateway)"
+  read -p "   Choice [1]: " bot_type
   bot_type=${bot_type:-1}
 
   if [[ "$bot_type" == "2" ]]; then
-    read -p "Pakasir Project Slug: " pakasir_slug
-    read -p "Pakasir API Key     : " pakasir_key
-    read -p "Daily Price (IDR)   : " daily_price
-    read -p "Default IP Limit    : " ip_limit
+    read -p "   Pakasir Project Slug: " pakasir_slug
+    read -p "   Pakasir API Key     : " pakasir_key
+    read -p "   Daily Price (IDR)   : " daily_price
+    read -p "   Default IP Limit    : " ip_limit
     ip_limit=${ip_limit:-1}
     
     echo "{\"bot_token\": \"$bot_token\", \"admin_id\": $admin_id, \"mode\": \"public\", \"domain\": \"$domain\", \"pakasir_slug\": \"$pakasir_slug\", \"pakasir_api_key\": \"$pakasir_key\", \"daily_price\": $daily_price, \"default_ip_limit\": $ip_limit}" > /etc/zivpn/bot-config.json
     bot_file="zivpn-paid-bot.go"
   else
-    read -p "Bot Mode (public/private) [default: private]: " bot_mode
+    read -p "   Bot Mode (public/private) [default: private]: " bot_mode
     bot_mode=${bot_mode:-private}
     
     echo "{\"bot_token\": \"$bot_token\", \"admin_id\": $admin_id, \"mode\": \"$bot_mode\", \"domain\": \"$domain\"}" > /etc/zivpn/bot-config.json
     bot_file="zivpn-bot.go"
   fi
   
-  run_silent "Downloading Bot" "wget -q https://raw.githubusercontent.com/PeyxDev/ZiVPN/main/$bot_file -O /etc/zivpn/api/$bot_file"
+  run_silent "Downloading Bot" "wget -q ${GITHUB_REPO}/$bot_file -O /etc/zivpn/api/$bot_file"
   
   cd /etc/zivpn/api
   run_silent "Downloading Bot Deps" "go get github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -223,20 +254,54 @@ else
   echo ""
 fi
 
-run_silent "Starting Services" "systemctl enable zivpn.service && systemctl start zivpn.service && systemctl enable zivpn-api.service && systemctl start zivpn-api.service"
+# Start services
+run_silent "Starting Services" "systemctl daemon-reload && systemctl enable zivpn.service && systemctl start zivpn.service && systemctl enable zivpn-api.service && systemctl start zivpn-api.service"
 
+# Firewall rules
 iface=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)' | head -1)
-iptables -t nat -A PREROUTING -i "$iface" -p udp --dport 6000:19999 -j DNAT --to-destination :5667 &>/dev/null
+iptables -t nat -A PREROUTING -i "$iface" -p udp --dport 6000:19999 -j DNAT --to-destination :${ZIVPN_UDP_PORT} &>/dev/null
 ufw allow 6000:19999/udp &>/dev/null
-ufw allow 5667/udp &>/dev/null
-ufw allow 8585/tcp &>/dev/null
+ufw allow ${ZIVPN_UDP_PORT}/udp &>/dev/null
+ufw allow ${ZIVPN_API_PORT}/tcp &>/dev/null
+
+# ==================== DOWNLOAD MENU MANAGER ====================
+echo ""
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo -e "${BOLD}         Installing Menu Manager${RESET}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo ""
+
+run_silent "Downloading Menu Manager" "wget -q ${GITHUB_REPO}/menu.sh -O /usr/local/sbin/m-zivpn && chmod +x /usr/local/sbin/m-zivpn"
+sed -i 's/\r$//' /usr/local/sbin/m-zivpn
+echo "alias m-zivpn='bash /usr/local/sbin/m-zivpn'" >> /root/.bashrc
+source ~/.bashrc 2>/dev/null
 
 rm -f "$0" install.tmp install.log &>/dev/null
 
+clear
 echo ""
-echo -e "${BOLD}Installation Complete${RESET}"
-echo -e "Domain  : ${CYAN}$domain${RESET}"
-echo -e "API     : ${CYAN}Port 8585${RESET}"
-echo -e "Token   : ${CYAN}$api_key${RESET}"
-echo -e "Dev     : ${CYAN}https://t.me/PeyxDev${RESET}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo -e "${GREEN}              INSTALLATION COMPLETE!${RESET}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo ""
+echo -e "${CYAN}  Domain      : ${domain}${RESET}"
+echo -e "${CYAN}  UDP Port    : ${ZIVPN_UDP_PORT}${RESET}"
+echo -e "${CYAN}  API Port    : ${ZIVPN_API_PORT}${RESET}"
+echo -e "${CYAN}  API Key     : ${api_key}${RESET}"
+echo -e "${CYAN}  Config      : /etc/zivpn/config.json${RESET}"
+echo -e "${CYAN}  Users DB    : /etc/zivpn/users.json${RESET}"
+echo ""
+echo -e "${BOLD}  Menu Manager:${RESET}"
+echo -e "    ${GREEN}m-zivpn${RESET}"
+echo ""
+echo -e "${BOLD}  Commands:${RESET}"
+echo -e "    ${YELLOW}systemctl start/stop/restart zivpn${RESET}"
+echo -e "    ${YELLOW}systemctl start/stop/restart zivpn-api${RESET}"
+echo ""
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo -e "${GRAY}  Telegram : https://t.me/PeyxDev${RESET}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo ""
+
+# Run menu
+bash /usr/local/sbin/m-zivpn
