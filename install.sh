@@ -82,7 +82,7 @@ echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 run_silent "Updating system" "apt-get update -y"
-run_silent "Installing dependencies" "apt-get install -y wget curl openssl python3 jq ufw"
+run_silent "Installing dependencies" "apt-get install -y wget curl openssl python3 jq ufw net-tools"
 
 # Domain input
 echo ""
@@ -121,25 +121,24 @@ echo ""
 
 run_silent "Downloading ZiVPN Core" "wget -q https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/udp-zivpn-linux-amd64 -O /usr/local/bin/zivpn && chmod +x /usr/local/bin/zivpn"
 
-# Create configuration
+# Create directory
 mkdir -p $ZIVPN_DIR
+
+# Save domain
 echo "$domain" > $ZIVPN_DIR/domain
 
-cat > $ZIVPN_DIR/config.json << 'EOF'
-{
-    "listen": ":5667",
-    "cert": "/etc/zivpn/zivpn.crt",
-    "key": "/etc/zivpn/zivpn.key",
-    "obfs": "http",
-    "auth": {
-        "mode": "password",
-        "config": []
-    }
-}
-EOF
+# Download config.json from repo
+run_silent "Downloading config.json" "wget -q ${GITHUB_REPO}/config.json -O $ZIVPN_DIR/config.json"
 
+# Update config.json with domain
+sed -i "s/\"cert\":.*/\"cert\": \"\/etc\/zivpn\/zivpn.crt\",/" $ZIVPN_DIR/config.json
+sed -i "s/\"key\":.*/\"key\": \"\/etc\/zivpn\/zivpn.key\",/" $ZIVPN_DIR/config.json
+sed -i "s/:5667/:${ZIVPN_PORT}/" $ZIVPN_DIR/config.json
+
+# Generate SSL certificate
 run_silent "Generating SSL Certificate" "openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj '/CN=$domain' -keyout $ZIVPN_DIR/zivpn.key -out $ZIVPN_DIR/zivpn.crt 2>/dev/null"
 
+# Create users database
 echo "[]" > $ZIVPN_DIR/users.json
 
 # Create systemd service
