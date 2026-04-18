@@ -1,4 +1,3 @@
-cat > menu.sh << 'EOF'
 #!/bin/bash
 
 REDBLD="\033[0m\033[91;1m"
@@ -388,6 +387,3 @@ Service_Status
 Details_Clients_Name
 Acces_Use_Command
 Select_Display
-EOF
-
-chmod +x menu.sh
