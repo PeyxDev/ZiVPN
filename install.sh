@@ -45,65 +45,48 @@ run_silent() {
   fi
 }
 
-# ==================== CEKIP & LISENSI ====================
-CEKIP() {
-    MYIP=$(curl -sS ipv4.icanhazip.com)
-    IPLIST=$(curl -sS https://raw.githubusercontent.com/PeyxDev/esce/main/ipx)
-    IPVPS=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $1}')
-    LICENSE_USERNAME=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $2}')
-    LICENSE_EXPIRED=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $3}')
-    LICENSE_KEY=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $4}')
-    LICENSE_PACKAGE=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $5}')
-    LICENSE_MAX_USERS=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $6}')
-    LICENSE_STATUS=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $7}')
-    
-    if [[ "$MYIP" != "$IPVPS" ]]; then
-        clear
-        echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
-        echo -e "${BLUE}│${RED}              PERMISSION DENIED !${NC}"
-        echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
-        echo -e "${BLUE}│${NC}"
-        echo -e "${BLUE}│${NC}  ${RED}IP Anda tidak terdaftar!${NC}"
-        echo -e "${BLUE}│${NC}  ${YELLOW}Silakan hubungi admin untuk izin akses${NC}"
-        echo -e "${BLUE}│${NC}"
-        echo -e "${BLUE}│${NC}  ${CYAN}Telegram : https://t.me/PeyxDev${NC}"
-        echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
-        exit 1
-    fi
-    
-    # Cek expired lisensi
-    today=$(date -d "0 days" +%Y-%m-%d)
-    d1=$(date -d "$LICENSE_EXPIRED" +%s 2>/dev/null)
-    d2=$(date -d "$today" +%s)
-    
-    if [[ -n "$LICENSE_EXPIRED" ]] && [[ $d1 -lt $d2 ]]; then
-        clear
-        echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
-        echo -e "${BLUE}│${RED}              LICENSE EXPIRED !${NC}"
-        echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
-        echo -e "${BLUE}│${NC}"
-        echo -e "${BLUE}│${NC}  ${RED}Lisensi Anda telah expired pada: ${LICENSE_EXPIRED}${NC}"
-        echo -e "${BLUE}│${NC}  ${YELLOW}Silakan perpanjang lisensi ke admin${NC}"
-        echo -e "${BLUE}│${NC}"
-        echo -e "${BLUE}│${NC}  ${CYAN}Telegram : https://t.me/PeyxDev${NC}"
-        echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
-        exit 1
-    fi
-    
-    # Cek status lisensi
-    if [[ "$LICENSE_STATUS" != "active" ]] && [[ -n "$LICENSE_STATUS" ]]; then
-        clear
-        echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
-        echo -e "${BLUE}│${RED}              LICENSE INACTIVE !${NC}"
-        echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
-        echo -e "${BLUE}│${NC}"
-        echo -e "${BLUE}│${NC}  ${RED}Status lisensi: ${LICENSE_STATUS}${NC}"
-        echo -e "${BLUE}│${NC}  ${YELLOW}Silakan hubungi admin untuk mengaktifkan lisensi${NC}"
-        echo -e "${BLUE}│${NC}"
-        echo -e "${BLUE}│${NC}  ${CYAN}Telegram : https://t.me/PeyxDev${NC}"
-        echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
-        exit 1
-    fi
+# ==================== CEKIP FUNCTION ====================
+CEKIP () {
+MYIP=$(curl -sS ipv4.icanhazip.com)
+IPVPS=$(curl -sS https://raw.githubusercontent.com/PeyxDev/esce/main/ipx | grep "$MYIP" | awk '{print $4}')
+USERNAME=$(curl -sS https://raw.githubusercontent.com/PeyxDev/esce/main/ipx | grep "$MYIP" | awk '{print $2}')
+EXPIRED=$(curl -sS https://raw.githubusercontent.com/PeyxDev/esce/main/ipx | grep "$MYIP" | awk '{print $3}')
+
+if [[ "$MYIP" == "$IPVPS" ]]; then
+  today=$(date -d "0 days" +%Y-%m-%d)
+  d1=$(date -d "$EXPIRED" +%s 2>/dev/null)
+  d2=$(date -d "$today" +%s)
+  
+  if [[ -z "$EXPIRED" ]]; then
+    return 0
+  elif [[ $d1 -lt $d2 ]]; then
+    clear
+    echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
+    echo -e "${BLUE}│${RED}              ACCOUNT EXPIRED !${FONT}"
+    echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+    echo -e "${BLUE}│${NC}"
+    echo -e "${BLUE}│${NC}  ${RED}Masa berlaku script Anda telah habis!${NC}"
+    echo -e "${BLUE}│${NC}  ${YELLOW}Silakan perpanjang ke admin${NC}"
+    echo -e "${BLUE}│${NC}"
+    echo -e "${BLUE}│${NC}  ${CYAN}Telegram : https://t.me/PeyxDev${NC}"
+    echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+    exit 1
+  else
+    return 0
+  fi
+else
+  clear
+  echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
+  echo -e "${BLUE}│${RED}              PERMISSION DENIED !${FONT}"
+  echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+  echo -e "${BLUE}│${NC}"
+  echo -e "${BLUE}│${NC}  ${RED}IP Anda tidak terdaftar!${NC}"
+  echo -e "${BLUE}│${NC}  ${YELLOW}Silakan hubungi admin untuk izin akses${NC}"
+  echo -e "${BLUE}│${NC}"
+  echo -e "${BLUE}│${NC}  ${CYAN}Telegram : https://t.me/PeyxDev${NC}"
+  echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+  exit 1
+fi
 }
 
 function Xwan_Banner() {
@@ -113,18 +96,6 @@ echo -e "${BLUE}│${WHITE}  \033[38;5;196m⁙\033[38;5;202m⁙\033[38;5;208m⁙
 echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
 }
 
-function License_Info_Install() {
-    echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
-    echo -e "${BLUE}│${CYAN}              LICENSE INFORMATION${NC}"
-    echo -e "${BLUE}├─────────────────────────────────────────────────┤${NC}"
-    echo -e "${BLUE}│${WHITE}  User Name   : ${YELLOW}${LICENSE_USERNAME:-Unknown}${NC}"
-    echo -e "${BLUE}│${WHITE}  License Key : ${CYAN}${LICENSE_KEY}${NC}"
-    echo -e "${BLUE}│${WHITE}  Package     : ${GREEN}${LICENSE_PACKAGE}${NC}"
-    echo -e "${BLUE}│${WHITE}  Max Users   : ${YELLOW}${LICENSE_MAX_USERS}${NC}"
-    echo -e "${BLUE}│${WHITE}  Expired     : ${YELLOW}${LICENSE_EXPIRED:-Lifetime}${NC}"
-    echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
-}
-
 function Service_System_Operating() {
 echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
 echo -e "${BLUE}│${WHITE} SYSTEM OS       : $(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g') ${NC}"
@@ -132,11 +103,9 @@ echo -e "${BLUE}│${WHITE} IP VPS          : $(curl -s ipv4.icanhazip.com) ${NC
 echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
 }
 
-# ==================== MAIN INSTALL ====================
 Xwan_Banner
 Service_System_Operating
 CEKIP
-License_Info_Install
 
 if [[ "$(uname -s)" != "Linux" ]] || [[ "$(uname -m)" != "x86_64" ]]; then
   print_fail "System not supported (Linux AMD64 only)"
@@ -154,9 +123,9 @@ fi
 run_silent "Updating system" "sudo apt-get update -y"
 
 if ! command -v go &> /dev/null; then
-  run_silent "Installing dependencies" "sudo apt-get install -y golang git wget curl openssl jq ufw python3"
+  run_silent "Installing dependencies" "sudo apt-get install -y golang git wget curl openssl jq ufw"
 else
-  run_silent "Installing dependencies" "sudo apt-get install -y wget curl openssl jq ufw python3"
+  run_silent "Installing dependencies" "sudo apt-get install -y wget curl openssl jq ufw"
 fi
 
 echo ""
@@ -202,13 +171,6 @@ mkdir -p /etc/zivpn
 echo "$domain" > /etc/zivpn/domain
 echo "$api_key" > /etc/zivpn/apikey
 echo "[]" > /etc/zivpn/users.json
-
-# Simpan informasi lisensi ke file
-echo "$LICENSE_USERNAME" > /etc/zivpn/license_user
-echo "$LICENSE_KEY" > /etc/zivpn/license_key
-echo "$LICENSE_EXPIRED" > /etc/zivpn/license_expired
-echo "$LICENSE_PACKAGE" > /etc/zivpn/license_package
-echo "$LICENSE_MAX_USERS" > /etc/zivpn/license_max_users
 
 run_silent "Configuring" "wget -q ${GITHUB_REPO}/config.json -O /etc/zivpn/config.json"
 sed -i "s/:5667/:${ZIVPN_UDP_PORT}/" /etc/zivpn/config.json
@@ -304,7 +266,6 @@ echo -e "${BLUE}│${CYAN}         Installing Menu Manager${FONT}"
 echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
 echo ""
 
-# Download menu script yang sudah lengkap dengan lisensi
 run_silent "Downloading Menu Manager" "wget -q ${GITHUB_REPO}/menu.sh -O /usr/local/bin/menu && chmod +x /usr/local/bin/menu"
 sed -i 's/\r$//' /usr/local/bin/menu
 echo "alias menu='bash /usr/local/bin/menu'" >> /root/.bashrc
@@ -324,16 +285,6 @@ echo -e "${BLUE}│${CYAN}  API Port    : ${ZIVPN_API_PORT}${FONT}"
 echo -e "${BLUE}│${CYAN}  API Key     : ${api_key}${FONT}"
 echo -e "${BLUE}│${CYAN}  Config      : /etc/zivpn/config.json${FONT}"
 echo -e "${BLUE}│${CYAN}  Users DB    : /etc/zivpn/users.json${FONT}"
-echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
-echo ""
-echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
-echo -e "${BLUE}│${CYAN}              LICENSE SAVED${FONT}"
-echo -e "${BLUE}├─────────────────────────────────────────────────┤${FONT}"
-echo -e "${BLUE}│${WHITE}  User Name   : ${YELLOW}${LICENSE_USERNAME}${FONT}"
-echo -e "${BLUE}│${WHITE}  License Key : ${CYAN}${LICENSE_KEY}${FONT}"
-echo -e "${BLUE}│${WHITE}  Package     : ${GREEN}${LICENSE_PACKAGE}${FONT}"
-echo -e "${BLUE}│${WHITE}  Max Users   : ${YELLOW}${LICENSE_MAX_USERS}${FONT}"
-echo -e "${BLUE}│${WHITE}  Expired     : ${YELLOW}${LICENSE_EXPIRED:-Lifetime}${FONT}"
 echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
 echo ""
 echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
