@@ -26,19 +26,10 @@ ZIVPN_API_PORT="8585"
 API_KEY=$(cat /etc/zivpn/apikey 2>/dev/null)
 GITHUB_REPO="https://raw.githubusercontent.com/PeyxDev/ZiVPN/main"
 
-# ==================== CEK IP & EXPIRED ====================
+# ==================== CEK IP BAWAAN (VALIDASI AKSES) ====================
 CEKIP() {
-    IPLIST=$(curl -sS https://raw.githubusercontent.com/PeyxDev/esce/main/ipx)
-    IPVPS=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $4}')
-    USERNAME=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $2}')
-    EXPIRED=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $3}')
-    LICENSE_KEY=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $5}')
-    LICENSE_PACKAGE=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $6}')
-    
-    if [[ -z "$LICENSE_KEY" ]]; then
-        LICENSE_KEY="XXXXXXXX-XXXX-XXXX-XXXX"
-        LICENSE_PACKAGE="-"
-    fi
+    MYIP=$(curl -sS ipv4.icanhazip.com)
+    IPVPS=$(curl -sS https://raw.githubusercontent.com/PeyxDev/esce/main/ipx | grep "$MYIP" | awk '{print $1}')
     
     if [[ "$MYIP" != "$IPVPS" ]]; then
         clear
@@ -53,30 +44,45 @@ CEKIP() {
         echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
         exit 1
     fi
+}
+
+# ==================== AMBIL DATA LISENSI ====================
+get_license_data() {
+    # Ambil data dari file ipx (sama seperti CEKIP)
+    IPLIST=$(curl -sS https://raw.githubusercontent.com/PeyxDev/esce/main/ipx)
     
+    # Ambil semua kolom
+    LICENSE_IP=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $1}')
+    LICENSE_USERNAME=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $2}')
+    LICENSE_EXPIRED=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $3}')
+    LICENSE_KEY=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $4}')
+    LICENSE_PACKAGE=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $5}')
+    LICENSE_MAX_USERS=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $6}')
+    LICENSE_STATUS=$(echo "$IPLIST" | grep "$MYIP" | awk '{print $7}')
+    
+    # Set default jika kosong
+    if [[ -z "$LICENSE_KEY" ]]; then
+        LICENSE_KEY="XXXXXXXX-XXXX-XXXX-XXXX"
+        LICENSE_PACKAGE="-"
+        LICENSE_MAX_USERS="0"
+        LICENSE_STATUS="unknown"
+    fi
+    
+    # Hitung sisa hari expired
     today=$(date -d "0 days" +%Y-%m-%d)
-    d1=$(date -d "$EXPIRED" +%s 2>/dev/null)
+    d1=$(date -d "$LICENSE_EXPIRED" +%s 2>/dev/null)
     d2=$(date -d "$today" +%s)
     
-    if [[ -z "$EXPIRED" ]]; then
-        masaaktif="LIFETIME"
-        status_exp="\033[92;1m● ACTIVE\033[0m"
+    if [[ -z "$LICENSE_EXPIRED" ]]; then
+        LICENSE_SISA="LIFETIME"
+        LICENSE_STATUS_TEXT="\033[92;1m● ACTIVE\033[0m"
     elif [[ $d1 -lt $d2 ]]; then
-        clear
-        echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
-        echo -e "${BLUE}│${RED}              ACCOUNT EXPIRED !${NC}"
-        echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
-        echo -e "${BLUE}│${NC}"
-        echo -e "${BLUE}│${NC}  ${RED}Masa berlaku script Anda telah habis!${NC}"
-        echo -e "${BLUE}│${NC}  ${YELLOW}Silakan perpanjang ke admin${NC}"
-        echo -e "${BLUE}│${NC}"
-        echo -e "${BLUE}│${NC}  ${CYAN}Telegram : https://t.me/PeyxDev${NC}"
-        echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
-        exit 1
+        LICENSE_SISA="0 Hari"
+        LICENSE_STATUS_TEXT="\033[91;1m● EXPIRED\033[0m"
     else
         certifacate=$(((d1 - d2) / 86400))
-        masaaktif="${certifacate} Hari"
-        status_exp="\033[92;1m● ACTIVE\033[0m"
+        LICENSE_SISA="${certifacate} Hari"
+        LICENSE_STATUS_TEXT="\033[92;1m● ACTIVE\033[0m"
     fi
 }
 
@@ -146,17 +152,18 @@ function Service_Status() {
     fi
 }
 
-# ==================== LICENSE INFO (GANTI API_INFO) ====================
+# ==================== LICENSE INFO (TAMPILAN LISENSI) ====================
 function License_Info() {
     echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
     echo -e "${BLUE}│${CYAN}              LICENSE INFORMATION${NC}"
     echo -e "${BLUE}├─────────────────────────────────────────────────┤${NC}"
-    echo -e "${BLUE}│${WHITE}  User Name   : ${YELLOW}${USERNAME:-Unknown}${NC}"
+    echo -e "${BLUE}│${WHITE}  User Name   : ${YELLOW}${LICENSE_USERNAME:-Unknown}${NC}"
     echo -e "${BLUE}│${WHITE}  License Key : ${CYAN}${LICENSE_KEY}${NC}"
     echo -e "${BLUE}│${WHITE}  Package     : ${GREEN}${LICENSE_PACKAGE}${NC}"
-    echo -e "${BLUE}│${WHITE}  Expired     : ${YELLOW}${EXPIRED:-Lifetime}${NC}"
-    echo -e "${BLUE}│${WHITE}  Sisa Hari   : ${YELLOW}${masaaktif}${NC}"
-    echo -e "${BLUE}│${WHITE}  Status      : ${status_exp}${NC}"
+    echo -e "${BLUE}│${WHITE}  Max Users   : ${YELLOW}${LICENSE_MAX_USERS}${NC}"
+    echo -e "${BLUE}│${WHITE}  Expired     : ${YELLOW}${LICENSE_EXPIRED:-Lifetime}${NC}"
+    echo -e "${BLUE}│${WHITE}  Sisa Hari   : ${YELLOW}${LICENSE_SISA}${NC}"
+    echo -e "${BLUE}│${WHITE}  Status      : ${LICENSE_STATUS_TEXT}${NC}"
     echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
 }
 
@@ -180,6 +187,16 @@ function create_user() {
     echo -e "${CYAN}              CREATE ZIVPN USER${NC}"
     echo -e "${YELLOW}──────────────────────────────────────────────────${NC}"
     echo ""
+    
+    # Cek apakah melebihi max users
+    CURRENT_USERS=$(get_total_users)
+    if [[ $CURRENT_USERS -ge ${LICENSE_MAX_USERS:-9999} ]] && [[ ${LICENSE_MAX_USERS:-9999} -ne 0 ]]; then
+        echo -e "${RED}   ❌ Limit user tercapai! (Max: ${LICENSE_MAX_USERS})${NC}"
+        echo ""
+        read -p "   Tekan Enter untuk kembali..."
+        return
+    fi
+    
     read -p "   Password / Username : " password
     read -p "   Days (masa aktif)   : " days
     read -p "   IP Limit (0=unlimited) : " iplimit
@@ -239,6 +256,15 @@ function create_random_user() {
     echo -e "${CYAN}         CREATE USER WITH RANDOM PASSWORD${NC}"
     echo -e "${YELLOW}──────────────────────────────────────────────────${NC}"
     echo ""
+    
+    # Cek apakah melebihi max users
+    CURRENT_USERS=$(get_total_users)
+    if [[ $CURRENT_USERS -ge ${LICENSE_MAX_USERS:-9999} ]] && [[ ${LICENSE_MAX_USERS:-9999} -ne 0 ]]; then
+        echo -e "${RED}   ❌ Limit user tercapai! (Max: ${LICENSE_MAX_USERS})${NC}"
+        echo ""
+        read -p "   Tekan Enter untuk kembali..."
+        return
+    fi
     
     password=$(generate_random_password)
     read -p "   Days (masa aktif)   : " days
@@ -746,10 +772,11 @@ function Select_Display() {
 }
 
 # ==================== MAIN ====================
-CEKIP
+CEKIP              # Validasi akses (IP harus terdaftar)
+get_license_data   # Ambil data lisensi untuk ditampilkan
 Zivpn_Banner
 Service_System_Operating
 Service_Status
-License_Info
+License_Info       # Tampilkan informasi lisensi
 Acces_Use_Command
 Select_Display
