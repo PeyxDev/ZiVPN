@@ -52,7 +52,7 @@ function get_total_users() {
 function Zivpn_Banner() {
     clear
     echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
-    echo -e "${BLUE}│${WHITE}  \033[38;5;196m⁙\033[38;5;202m⁙\033[38;5;208m⁙\033[38;5;214m⁙\033[38;5;220m⁙\033[38;5;226m⁙\033[38;5;190m⁙\033[38;5;154m⁙\033[38;5;118m⁙\033[38;5;82m⁙\033[38;5;46m⁙\033[38;5;47m⁙\033[38;5;48m⁙\033[38;5;49m⁙${WHITE} ZIVPN MANAGER \033[38;5;87m⁙\033[38;5;86m⁙\033[38;5;85m⁙\033[38;5;84m⁙\033[38;5;83m⁙\033[38;5;44m⁙\033[38;5;43m⁙\033[38;5;42m⁙\033[38;5;41m⁙\033[38;5;40m⁙\033[38;5;39m⁙\033[38;5;38m⁙\033[38;5;37m⁙\033[38;5;36m⁙${WHITE}   ${BLUE}│${NC}"
+    echo -e "${BLUE}│${WHITE}  \033[38;5;196m⁙\033[38;5;202m⁙\033[38;5;208m⁙\033[38;5;214m⁙\033[38;5;220m⁙\033[38;5;226m⁙\033[38;5;190m⁙\033[38;5;154m⁙\033[38;5;118m⁙\033[38;5;82m⁙\033[38;5;46m⁙\033[38;5;47m⁙\033[38;5;48m⁙\033[38;5;49m⁙${WHITE} ZIVPN MANAGER \033[38;5;87m⁙\033[38;5;86m⁙\033[38;5;85m⁙\033[38;5;84m⁙\033[38;5;83m⁙\033[38;5;44m⁙\033[38;5;43m⁙\033[38;5;42m⁙\033[38;5;41m⁙\033[38;5;40m⁙\033[38;5;39m⁙\033[38;5;38m⁙\033[38;5;37m⁙\033[38;5;36m⁙${WHITE}    ${BLUE}│${NC}"
     echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
 }
 
@@ -76,7 +76,7 @@ function Service_Status() {
 function API_Info() {
     if [ -f "/etc/zivpn/apikey" ]; then
         echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
-        echo -e "${BLUE}│${WHITE} API PORT        : $ZIVPN_API_PORT ${NC}"
+        echo -e "${BLUE}│${WHITE} API PORT       : $ZIVPN_API_PORT ${NC}"
         echo -e "${BLUE}│${WHITE} API KEY        : ${YELLOW}${API_KEY}${NC}"
         echo -e "${BLUE}│${WHITE} API URL        : ${CYAN}http://$MYIP:$ZIVPN_API_PORT${NC}"
         echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
@@ -92,13 +92,13 @@ function Details_Clients_Name() {
 
 function Acces_Use_Command() {
     echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
-    echo -e "${BLUE}│  ${WHITE}1.${NC})${Green} Create ZiVPN User     ${BLUE}  5.${NC})${Green} View Config${RESET}          ${BLUE}│${NC}"
-    echo -e "${BLUE}│  ${WHITE}2.${NC})${Green} Delete ZiVPN User     ${BLUE}  6.${NC})${Green} Change Domain${RESET}        ${BLUE}│${NC}"
-    echo -e "${BLUE}│  ${WHITE}3.${NC})${Green} Renew ZiVPN User      ${BLUE}  7.${NC})${Green} Restart Service${RESET}      ${BLUE}│${NC}"
-    echo -e "${BLUE}│  ${WHITE}4.${NC})${Green} List ZiVPN Users      ${BLUE}  8.${NC})${Green} Service Status${RESET}      ${BLUE}│${NC}"
+    echo -e "${BLUE}│  1.${NC})${Green} Create ZiVPN User     ${BLUE}  5.${NC})${Green} View Config${RESET}    ${BLUE}│${NC}"
+    echo -e "${BLUE}│  2.${NC})${Green} Delete ZiVPN User     ${BLUE}  6.${NC})${Green} Change Domain${RESET}  ${BLUE}│${NC}"
+    echo -e "${BLUE}│  3.${NC})${Green} Renew ZiVPN User      ${BLUE}  7.${NC})${Green} Restart Service${RESET}${BLUE}│${NC}"
+    echo -e "${BLUE}│  4.${NC})${Green} List ZiVPN Users      ${BLUE}  8.${NC})${Green} Service Status${RESET} ${BLUE}│${NC}"
     echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
     echo -e "${BLUE}  ┌───────────────────────────────────────────────┐${NC}"
-    echo -e "${BLUE}  │  ${RED}x.${NC})${RED} Exit / Back to Main Menu${NC}                               ${BLUE}│${NC}"
+    echo -e "${BLUE}  │  ${RED}x.${NC})${RED} Exit / Back to Main Menu${NC}                 ${BLUE}│${NC}"
     echo -e "${BLUE}  └───────────────────────────────────────────────┘${NC}"
 }
 
