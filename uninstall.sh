@@ -1,51 +1,48 @@
 #!/bin/bash
 
-# Colors
-GREEN="\033[1;32m"
-YELLOW="\033[1;33m"
-CYAN="\033[1;36m"
 RED="\033[1;31m"
+GREEN="\033[1;32m"
+CYAN="\033[1;36m"
 RESET="\033[0m"
 BOLD="\033[1m"
-GRAY="\033[1;30m"
 
-print_task() {
-  echo -ne "${GRAY}•${RESET} $1..."
-}
-
-print_done() {
-  echo -e "\r${GREEN}✓${RESET} $1      "
-}
-
-run_silent() {
-  local msg="$1"
-  local cmd="$2"
-  
-  print_task "$msg"
-  bash -c "$cmd" &>/tmp/zivpn_uninstall.log
-  if [ $? -eq 0 ]; then
-    print_done "$msg"
-  else
-    print_done "$msg" 
-  fi
-}
-
-clear
-echo -e "${BOLD}ZiVPN UDP Uninstaller${RESET}"
-echo -e "${GRAY}PeyxDev Edition${RESET}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo -e "${RED}              UNINSTALL ZIVPN${RESET}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo ""
 
-run_silent "Stopping services" "systemctl stop zivpn.service zivpn-api.service zivpn-bot.service zivpn_backfill.service &>/dev/null; systemctl disable zivpn.service zivpn-api.service zivpn-bot.service zivpn_backfill.service &>/dev/null; killall zivpn zivpn-api zivpn-bot &>/dev/null"
+read -p "Are you sure you want to uninstall ZiVPN? (y/n): " confirm
 
-run_silent "Removing files" "rm -rf /etc/zivpn /usr/local/bin/zivpn /etc/systemd/system/zivpn.service /etc/systemd/system/zivpn-api.service /etc/systemd/system/zivpn-bot.service /etc/systemd/system/zivpn_backfill.service /etc/zivpn-iptables-fix-applied /usr/local/bin/menu-zivpn /etc/zivpn/bot-config.json /etc/zivpn/apikey"
+if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+    echo -e "${CYAN}Uninstall cancelled${RESET}"
+    exit 0
+fi
 
-iface=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)' | head -1)
-run_silent "Cleaning network rules" "iptables -t nat -D PREROUTING -i $iface -p udp --dport 6000:19999 -j DNAT --to-destination :5667 &>/dev/null"
+echo -e "${CYAN}Stopping services...${RESET}"
+systemctl stop zivpn zivpn-api zivpn-bot 2>/dev/null
+systemctl disable zivpn zivpn-api zivpn-bot 2>/dev/null
 
-run_silent "Reloading systemd" "systemctl daemon-reload && systemctl daemon-reexec"
-run_silent "Cleaning cache" "echo 3 > /proc/sys/vm/drop_caches && sysctl -w vm.drop_caches=3 &>/dev/null && swapoff -a && swapon -a"
+echo -e "${CYAN}Removing binaries...${RESET}"
+rm -f /usr/local/bin/zivpn
+rm -f /usr/local/bin/m-zivpn
+
+echo -e "${CYAN}Removing configuration...${RESET}"
+rm -rf /etc/zivpn
+
+echo -e "${CYAN}Removing systemd services...${RESET}"
+rm -f /etc/systemd/system/zivpn.service
+rm -f /etc/systemd/system/zivpn-api.service
+rm -f /etc/systemd/system/zivpn-bot.service
+systemctl daemon-reload
+
+echo -e "${CYAN}Removing firewall rules...${RESET}"
+ufw delete allow 5667/udp 2>/dev/null
+ufw delete allow 5667/tcp 2>/dev/null
+ufw delete allow 8585/tcp 2>/dev/null
+
+echo -e "${CYAN}Removing alias...${RESET}"
+sed -i '/alias m-zivpn/d' /root/.bashrc
 
 echo ""
-echo -e "${BOLD}Uninstallation Complete${RESET}"
-echo -e "${GRAY}ZiVPN has been completely removed from your system.${RESET}"
-echo ""
+echo -e "${GREEN}✅ ZiVPN has been uninstalled completely!${RESET}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"

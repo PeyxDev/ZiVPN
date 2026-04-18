@@ -19,29 +19,6 @@ ZIVPN_UDP_PORT="5667"
 ZIVPN_API_PORT="8585"
 GITHUB_REPO="https://raw.githubusercontent.com/PeyxDev/ZiVPN/main"
 
-function print_install() {
-echo -e "${BLUE} ┌─────────────────────────────────────────────────┐${FONT}"
-echo -e "${BLUE} │${YELLOW} # $1${FONT}"
-echo -e "${BLUE} └─────────────────────────────────────────────────┘${FONT}"
-sleep 1
-}
-
-function print_success() {
-if [[ 0 -eq $? ]]; then
-echo -e "${BLUE} ┌─────────────────────────────────────────────────┐${FONT}"
-echo -e "${BLUE} │${Green} ✓ $1 berhasil dipasang${FONT}"
-echo -e "${BLUE} └─────────────────────────────────────────────────┘${FONT}"
-sleep 2
-fi
-}
-
-function print_error() {
-echo -e "${BLUE} ┌─────────────────────────────────────────────────┐${FONT}"
-echo -e "${BLUE} │${RED} ✗ $1${FONT}"
-echo -e "${BLUE} └─────────────────────────────────────────────────┘${FONT}"
-exit 1
-}
-
 print_task() {
   echo -ne "${GRAY}•${RESET} $1..."
 }
@@ -68,98 +45,93 @@ run_silent() {
   fi
 }
 
-# ==================== CEK IP FUNCTION ====================
-CEKIP() {
-clear
-echo -e "${BLUE} ┌─────────────────────────────────────────────────┐${FONT}"
-echo -e "${BLUE} │${YELLOW}         Verifying IP Authorization${FONT}"
-echo -e "${BLUE} └─────────────────────────────────────────────────┘${FONT}"
-echo ""
-  
+# ==================== CEKIP FUNCTION ====================
+CEKIP () {
 MYIP=$(curl -sS ipv4.icanhazip.com)
-echo -e "${BLUE} │${NC} Your IP Address: ${CYAN}$MYIP${NC}"
-  
-IPVPS=$(curl -sS https://raw.githubusercontent.com/PeyxDev/esce/main/ipx | grep "$MYIP" | awk '{print $4}')
-  
-if [[ "$MYIP" == "$IPVPS" ]]; then
-  echo -e "${BLUE} │${Green} ✓ IP Authorized!${NC}"
-  echo -e "${BLUE} │${Green} ✓ Proceeding with installation...${NC}"
-  echo -e "${BLUE} └─────────────────────────────────────────────────┘${FONT}"
-  echo ""
-  sleep 2
+IPVPS=$(curl -sS https://raw.githubusercontent.com/PeyxDev/esce/main/ipx | grep $MYIP | awk '{print $4}')
+if [[ $MYIP == $IPVPS ]]; then
   return 0
 else
-  echo -e "${BLUE} │${RED} ✗ IP NOT AUTHORIZED!${NC}"
-  echo -e "${BLUE} │${RED} ✗ Your IP (${MYIP}) is not in the allowed list.${NC}"
-  echo -e "${BLUE} │${RED} ✗ Installation cannot proceed.${NC}"
-  echo ""
-  echo -e "${BLUE} │${YELLOW} Please contact administrator to get your IP whitelisted.${NC}"
-  echo -e "${BLUE} │${YELLOW} Telegram: https://t.me/PeyxDev${NC}"
-  echo -e "${BLUE} └─────────────────────────────────────────────────┘${FONT}"
-  echo ""
+  clear
+  echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
+  echo -e "${BLUE}│${RED}              PERMISSION DENIED !${FONT}"
+  echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+  echo -e "${BLUE}│${NC}"
+  echo -e "${BLUE}│${NC}  ${RED}IP Anda tidak terdaftar!${NC}"
+  echo -e "${BLUE}│${NC}  ${YELLOW}Silakan hubungi admin untuk izin akses${NC}"
+  echo -e "${BLUE}│${NC}"
+  echo -e "${BLUE}│${NC}  ${CYAN}Telegram : https://t.me/PeyxDev${NC}"
+  echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
   exit 1
 fi
 }
 
-function Xwan_Banner() {
 clear
-echo -e "\033[36;1m┌─────────────────────────────────────────────────┐\033[0m"
-echo -e "\033[36;1m│\e[97m  \033[38;5;196m⁙\033[38;5;202m⁙\033[38;5;208m⁙\033[38;5;214m⁙\033[38;5;220m⁙\033[38;5;226m⁙\033[38;5;190m⁙\033[38;5;154m⁙\033[38;5;118m⁙\033[38;5;82m⁙\033[38;5;46m⁙\033[38;5;47m⁙\033[38;5;48m⁙\033[38;5;49m⁙\033[97m ZiVPN INSTALLER \033[38;5;87m⁙\033[38;5;86m⁙\033[38;5;85m⁙\033[38;5;84m⁙\033[38;5;83m⁙\033[38;5;44m⁙\033[38;5;43m⁙\033[38;5;42m⁙\033[38;5;41m⁙\033[38;5;40m⁙\033[38;5;39m⁙\033[38;5;38m⁙\033[38;5;37m⁙\033[38;5;36m⁙\033[97m   \033[36;1m│\033[0m"
-echo -e "\033[36;1m└─────────────────────────────────────────────────┘\033[0m"
-}
-
-function Domain_Input() {
 echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
-echo -e "${BLUE}│              Domain Configuration${FONT}"
+echo -e "${BLUE}│${CYAN}         ZiVPN UDP Installer - PeyxDev Edition${FONT}"
 echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
 echo ""
+
+CEKIP
+
+if [[ "$(uname -s)" != "Linux" ]] || [[ "$(uname -m)" != "x86_64" ]]; then
+  print_fail "System not supported (Linux AMD64 only)"
+fi
+
+if [ -f /usr/local/bin/zivpn ]; then
+  echo -e "${YELLOW}┌─────────────────────────────────────────────────┐${NC}"
+  echo -e "${YELLOW}│  ! ZiVPN detected. Reinstalling...${NC}"
+  echo -e "${YELLOW}└─────────────────────────────────────────────────┘${NC}"
+  systemctl stop zivpn.service &>/dev/null
+  systemctl stop zivpn-api.service &>/dev/null
+  systemctl stop zivpn-bot.service &>/dev/null
+fi
+
+run_silent "Updating system" "sudo apt-get update -y"
+
+if ! command -v go &> /dev/null; then
+  run_silent "Installing dependencies" "sudo apt-get install -y golang git wget curl openssl jq ufw"
+else
+  run_silent "Installing dependencies" "sudo apt-get install -y wget curl openssl jq ufw"
+fi
+
+echo ""
+echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
+echo -e "${BLUE}│${CYAN}         Domain Configuration${FONT}"
+echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+echo ""
+
 while true; do
   read -p "   Enter Domain (e.g., vpn.pxstore.web.id): " domain
   if [[ -n "$domain" ]]; then
     break
   fi
 done
+
 echo ""
 echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
 echo -e "${BLUE}│${CYAN}   UDP Port: ${ZIVPN_UDP_PORT}${FONT}"
 echo -e "${BLUE}│${CYAN}   API Port: ${ZIVPN_API_PORT}${FONT}"
 echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
 echo ""
-}
 
-function API_Key_Input() {
 echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
-echo -e "${BLUE}│              API Key Configuration${FONT}"
+echo -e "${BLUE}│${CYAN}         API Key Configuration${FONT}"
 echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
 echo ""
 
 generated_key=$(openssl rand -hex 16)
-echo -e "${BLUE}│${NC}   Generated Key: ${CYAN}$generated_key${NC}"
+echo -e "   Generated Key: ${CYAN}$generated_key${RESET}"
 read -p "   Enter API Key (Press Enter to use generated): " input_key
 if [[ -z "$input_key" ]]; then
   api_key="$generated_key"
 else
   api_key="$input_key"
 fi
-echo -e "${BLUE}│${NC}   Using Key: ${Green}$api_key${NC}"
-echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+echo -e "   Using Key: ${GREEN}$api_key${RESET}"
 echo ""
-}
-
-function Installation_Process() {
-print_install "Installing ZiVPN Server"
 
 systemctl stop zivpn.service &>/dev/null
-systemctl stop zivpn-api.service &>/dev/null
-
-run_silent "Updating system" "apt-get update -y"
-
-if ! command -v go &> /dev/null; then
-  run_silent "Installing dependencies" "apt-get install -y golang git wget curl openssl jq ufw"
-else
-  run_silent "Installing dependencies" "apt-get install -y wget curl openssl jq ufw"
-fi
-
 run_silent "Downloading Core" "wget -q https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/udp-zivpn-linux-amd64 -O /usr/local/bin/zivpn && chmod +x /usr/local/bin/zivpn"
 
 mkdir -p /etc/zivpn
@@ -218,6 +190,7 @@ mkdir -p /etc/zivpn/api
 run_silent "Setting up API" "wget -q ${GITHUB_REPO}/zivpn-api.go -O /etc/zivpn/api/zivpn-api.go && wget -q ${GITHUB_REPO}/go.mod -O /etc/zivpn/api/go.mod"
 
 cd /etc/zivpn/api
+# Update API port
 sed -i "s/Port = \":8080\"/Port = \":${ZIVPN_API_PORT}\"/" zivpn-api.go
 
 if go build -o zivpn-api zivpn-api.go &>/dev/null; then
@@ -244,6 +217,83 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 
+# ==================== TELEGRAM BOT CONFIGURATION ====================
+echo ""
+echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
+echo -e "${BLUE}│${CYAN}         Telegram Bot Configuration${FONT}"
+echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+echo -e "${GRAY}   (Leave empty to skip)${NC}"
+echo ""
+read -p "   Bot Token: " bot_token
+read -p "   Admin ID : " admin_id
+
+if [[ -n "$bot_token" ]] && [[ -n "$admin_id" ]]; then
+  echo ""
+  echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
+  echo -e "${BLUE}│${CYAN}         Select Bot Type${FONT}"
+  echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+  echo -e "   ${GREEN}1${NC}) Free (Admin Only / Public Mode)"
+  echo -e "   ${GREEN}2${NC}) Paid (Pakasir Payment Gateway)"
+  read -p "   Choice [1]: " bot_type
+  bot_type=${bot_type:-1}
+
+  if [[ "$bot_type" == "2" ]]; then
+    echo ""
+    read -p "   Pakasir Project Slug: " pakasir_slug
+    read -p "   Pakasir API Key     : " pakasir_key
+    read -p "   Daily Price (IDR)   : " daily_price
+    read -p "   Default IP Limit    : " ip_limit
+    ip_limit=${ip_limit:-1}
+    
+    echo "{\"bot_token\": \"$bot_token\", \"admin_id\": $admin_id, \"mode\": \"public\", \"domain\": \"$domain\", \"pakasir_slug\": \"$pakasir_slug\", \"pakasir_api_key\": \"$pakasir_key\", \"daily_price\": $daily_price, \"default_ip_limit\": $ip_limit}" > /etc/zivpn/bot-config.json
+    bot_file="zivpn-paid-bot.go"
+    bot_type_name="Paid (Pakasir)"
+  else
+    echo ""
+    read -p "   Bot Mode (public/private) [default: private]: " bot_mode
+    bot_mode=${bot_mode:-private}
+    
+    echo "{\"bot_token\": \"$bot_token\", \"admin_id\": $admin_id, \"mode\": \"$bot_mode\", \"domain\": \"$domain\"}" > /etc/zivpn/bot-config.json
+    bot_file="zivpn-bot.go"
+    bot_type_name="Free"
+  fi
+  
+  echo ""
+  run_silent "Downloading Bot" "wget -q ${GITHUB_REPO}/$bot_file -O /etc/zivpn/api/$bot_file"
+  
+  cd /etc/zivpn/api
+  run_silent "Downloading Bot Deps" "go get github.com/go-telegram-bot-api/telegram-bot-api/v5"
+  
+  if go build -o zivpn-bot "$bot_file" &>/dev/null; then
+    print_done "Compiling Bot ($bot_type_name)"
+    
+    cat <<EOF > /etc/systemd/system/zivpn-bot.service
+[Unit]
+Description=ZiVPN Telegram Bot
+After=network.target zivpn-api.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/etc/zivpn/api
+ExecStart=/etc/zivpn/api/zivpn-bot
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl enable zivpn-bot.service &>/dev/null
+    systemctl start zivpn-bot.service &>/dev/null
+    print_done "Bot Service Created"
+  else
+    print_fail "Compiling Bot"
+  fi
+else
+  print_task "Skipping Bot Setup"
+  echo ""
+fi
+
 # Start services
 run_silent "Starting Services" "systemctl daemon-reload && systemctl enable zivpn.service && systemctl start zivpn.service && systemctl enable zivpn-api.service && systemctl start zivpn-api.service"
 
@@ -253,19 +303,25 @@ iptables -t nat -A PREROUTING -i "$iface" -p udp --dport 6000:19999 -j DNAT --to
 ufw allow 6000:19999/udp &>/dev/null
 ufw allow ${ZIVPN_UDP_PORT}/udp &>/dev/null
 ufw allow ${ZIVPN_API_PORT}/tcp &>/dev/null
-}
 
-function Menu_Install() {
+# ==================== DOWNLOAD MENU MANAGER ====================
+echo ""
+echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
+echo -e "${BLUE}│${CYAN}         Installing Menu Manager${FONT}"
+echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+echo ""
+
 run_silent "Downloading Menu Manager" "wget -q ${GITHUB_REPO}/menu.sh -O /usr/local/sbin/m-zivpn && chmod +x /usr/local/sbin/m-zivpn"
 sed -i 's/\r$//' /usr/local/sbin/m-zivpn
 echo "alias m-zivpn='bash /usr/local/sbin/m-zivpn'" >> /root/.bashrc
 source ~/.bashrc 2>/dev/null
-}
 
-function Show_Result() {
+rm -f "$0" install.tmp install.log &>/dev/null
+
 clear
+echo ""
 echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
-echo -e "${BLUE}│${Green}              INSTALLATION COMPLETE!${FONT}"
+echo -e "${BLUE}│${GREEN}              INSTALLATION COMPLETE!${FONT}"
 echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
 echo ""
 echo -e "${BLUE}│${CYAN}  Domain      : ${domain}${FONT}"
@@ -275,45 +331,42 @@ echo -e "${BLUE}│${CYAN}  API Key     : ${api_key}${FONT}"
 echo -e "${BLUE}│${CYAN}  Config      : /etc/zivpn/config.json${FONT}"
 echo -e "${BLUE}│${CYAN}  Users DB    : /etc/zivpn/users.json${FONT}"
 echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+
+if [[ -n "$bot_token" ]] && [[ -n "$admin_id" ]]; then
+echo ""
+echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
+echo -e "${BLUE}│${GREEN}              BOT CONFIGURATION${FONT}"
+echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+echo -e "${BLUE}│${CYAN}  Bot Type    : ${bot_type_name}${FONT}"
+echo -e "${BLUE}│${CYAN}  Bot Token   : ${bot_token}${FONT}"
+echo -e "${BLUE}│${CYAN}  Admin ID    : ${admin_id}${FONT}"
+if [[ "$bot_type" == "2" ]]; then
+echo -e "${BLUE}│${CYAN}  Pakasir Slug: ${pakasir_slug}${FONT}"
+echo -e "${BLUE}│${CYAN}  Daily Price : Rp ${daily_price}${FONT}"
+echo -e "${BLUE}│${CYAN}  IP Limit    : ${ip_limit}${FONT}"
+fi
+echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
+fi
+
 echo ""
 echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
 echo -e "${BLUE}│${YELLOW}  Menu Manager:${FONT}"
-echo -e "${BLUE}│${Green}    m-zivpn${FONT}"
+echo -e "${BLUE}│${GREEN}    m-zivpn${FONT}"
 echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
 echo ""
 echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
 echo -e "${BLUE}│${YELLOW}  Commands:${FONT}"
 echo -e "${BLUE}│${NC}    systemctl start/stop/restart zivpn${FONT}"
 echo -e "${BLUE}│${NC}    systemctl start/stop/restart zivpn-api${FONT}"
+if [[ -n "$bot_token" ]] && [[ -n "$admin_id" ]]; then
+echo -e "${BLUE}│${NC}    systemctl start/stop/restart zivpn-bot${FONT}"
+fi
 echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
 echo ""
 echo -e "${BLUE}┌─────────────────────────────────────────────────┐${FONT}"
 echo -e "${BLUE}│${GRAY}  Telegram : https://t.me/PeyxDev${FONT}"
 echo -e "${BLUE}└─────────────────────────────────────────────────┘${FONT}"
 echo ""
-}
-
-# ==================== MAIN INSTALLATION ====================
-Xwan_Banner
-CEKIP
-
-if [[ "$(uname -s)" != "Linux" ]] || [[ "$(uname -m)" != "x86_64" ]]; then
-  print_error "System not supported (Linux AMD64 only)"
-fi
-
-if [ -f /usr/local/bin/zivpn ]; then
-  echo -e "${YELLOW}! ZiVPN detected. Reinstalling...${RESET}"
-  systemctl stop zivpn.service &>/dev/null
-  systemctl stop zivpn-api.service &>/dev/null
-fi
-
-Domain_Input
-API_Key_Input
-Installation_Process
-Menu_Install
-Show_Result
-
-rm -f "$0" install.tmp install.log &>/dev/null
 
 # Run menu
 bash /usr/local/sbin/m-zivpn
