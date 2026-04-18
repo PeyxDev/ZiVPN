@@ -12,10 +12,33 @@ NC='\e[0m'
 CYAN="\033[96;1m"
 WHITE="\033[97;1m"
 
+# Get server info
 MYIP=$(curl -sS ipv4.icanhazip.com)
 domain=$(cat /etc/xray/domain 2>/dev/null || cat /etc/zivpn/domain 2>/dev/null || echo "Tidak ada")
-ISP=$(cat /etc/xray/isp 2>/dev/null || echo "Unknown")
-CITY=$(cat /etc/xray/city 2>/dev/null || echo "Unknown")
+
+# Get ISP and CITY from various sources
+ISP=$(cat /etc/xray/isp 2>/dev/null)
+if [[ -z "$ISP" ]]; then
+    ISP=$(curl -s ipinfo.io/org 2>/dev/null | cut -d " " -f 2-10)
+fi
+if [[ -z "$ISP" ]]; then
+    ISP=$(curl -s https://ipapi.co/org 2>/dev/null)
+fi
+if [[ -z "$ISP" ]]; then
+    ISP="Unknown"
+fi
+
+CITY=$(cat /etc/xray/city 2>/dev/null)
+if [[ -z "$CITY" ]]; then
+    CITY=$(curl -s ipinfo.io/city 2>/dev/null)
+fi
+if [[ -z "$CITY" ]]; then
+    CITY=$(curl -s https://ipapi.co/city 2>/dev/null)
+fi
+if [[ -z "$CITY" ]]; then
+    CITY="Unknown"
+fi
+
 DATEVPS=$(date +'%d/%m/%Y')
 TIMEZONE=$(date +'%H:%M:%S')
 MODEL=$(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g')
@@ -30,6 +53,14 @@ function check_zivpn_status() {
     if systemctl is-active --quiet zivpn 2>/dev/null; then
         echo -e "${Green}ON${NC}"
     elif pgrep -x "zivpn" > /dev/null; then
+        echo -e "${Green}ON${NC}"
+    else
+        echo -e "${RED}OFF${NC}"
+    fi
+}
+
+function check_api_status() {
+    if systemctl is-active --quiet zivpn-api 2>/dev/null; then
         echo -e "${Green}ON${NC}"
     else
         echo -e "${RED}OFF${NC}"
@@ -64,14 +95,15 @@ function Service_System_Operating() {
     echo -e "${BLUE}│${WHITE} SYSTEM OS       : $MODEL ${NC}"
     echo -e "${BLUE}│${WHITE} UPTIME SERVER   : $SERONLINE ${NC}"
     echo -e "${BLUE}│${WHITE} IP VPS          : $MYIP ${NC}"
-    echo -e "${BLUE}│${WHITE} ISP             : $ISP - $CITY ${NC}"
+    echo -e "${BLUE}│${WHITE} ISP             : $ISP ${NC}"
+    echo -e "${BLUE}│${WHITE} CITY            : $CITY ${NC}"
     echo -e "${BLUE}│${WHITE} DOMAIN          : $domain ${NC}"
     echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
 }
 
 function Service_Status() {
     echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
-    echo -e "${BLUE}|${NC}${YELLOW} ZIVPN : $(check_zivpn_status) ${BLUE}|${NC}${YELLOW} PORT : $ZIVPN_PORT ${BLUE}|${NC}${YELLOW} USERS : $(get_total_users) (Active: $(get_active_users)) ${BLUE}| ${NC}"
+    echo -e "${BLUE}|${NC}${YELLOW} ZIVPN : $(check_zivpn_status) ${BLUE}|${NC}${YELLOW} API : $(check_api_status) ${BLUE}|${NC}${YELLOW} PORT : $ZIVPN_PORT ${BLUE}|${NC}${YELLOW} USERS : $(get_total_users) (Active: $(get_active_users)) ${BLUE}| ${NC}"
     echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
 }
 
@@ -145,6 +177,7 @@ PYTHON
     echo -e "   Password : ${YELLOW}$password${NC}"
     echo -e "   Expired  : ${YELLOW}$exp_date${NC}"
     echo -e "   IP Limit : ${YELLOW}${iplimit:-0}${NC}"
+    echo -e "   Domain   : ${YELLOW}$(cat $ZIVPN_DOMAIN 2>/dev/null)${NC}"
     
     systemctl restart zivpn 2>/dev/null
     echo ""
@@ -307,7 +340,6 @@ function change_domain() {
         echo "$new_domain" > $ZIVPN_DOMAIN
         echo -e "${Green}   ✅ Domain updated to: $new_domain${NC}"
         
-        # Regenerate SSL
         openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj "/CN=$new_domain" -keyout /etc/zivpn/zivpn.key -out /etc/zivpn/zivpn.crt 2>/dev/null
         systemctl restart zivpn 2>/dev/null
     fi

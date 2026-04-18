@@ -17,6 +17,7 @@ GRAY="\033[1;30m"
 
 # ==================== VARIABLES ====================
 ZIVPN_PORT="5667"
+ZIVPN_API_PORT="8585"
 ZIVPN_DIR="/etc/zivpn"
 GITHUB_REPO="https://raw.githubusercontent.com/PeyxDev/ZiVPN/main"
 
@@ -70,7 +71,7 @@ if [[ "$(uname -s)" != "Linux" ]] || [[ "$(uname -m)" != "x86_64" ]]; then
 fi
 
 # Stop existing services
-systemctl stop zivpn 2>/dev/null
+systemctl stop zivpn zivpn-api 2>/dev/null
 pkill -x zivpn 2>/dev/null
 
 # Update system
@@ -101,7 +102,18 @@ echo ""
 echo -e "${CYAN}   UDP Port: ${ZIVPN_PORT}${NC}"
 echo ""
 
+# Pilihan Install
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo -e "${BOLD}         Installation Type${RESET}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo ""
+echo -e "   ${YELLOW}1)${RESET} Install with API (REST API + CLI Menu)"
+echo -e "   ${YELLOW}2)${RESET} Install CLI Only (Menu Manager only)"
+echo ""
+read -p "   Choose option [1-2]: " install_type
+
 # Download core
+echo ""
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo -e "${BOLD}         Installing ZiVPN Core${RESET}"
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
@@ -149,6 +161,51 @@ LimitNOFILE=65535
 WantedBy=multi-user.target
 EOF
 
+# Install API if chosen
+if [[ "$install_type" == "1" ]]; then
+    echo ""
+    echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "${BOLD}         Installing API Service${RESET}"
+    echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo ""
+    
+    # Generate API Key
+    API_KEY=$(openssl rand -hex 16)
+    echo "$API_KEY" > $ZIVPN_DIR/apikey
+    
+    # Install Go if not exists
+    if ! command -v go &> /dev/null; then
+        run_silent "Installing Golang" "apt-get install -y golang"
+    fi
+    
+    # Download and build API
+    run_silent "Downloading API Source" "wget -q ${GITHUB_REPO}/zivpn-api.go -O $ZIVPN_DIR/api.go"
+    
+    cd $ZIVPN_DIR
+    run_silent "Compiling API" "go build -o zivpn-api api.go 2>/dev/null"
+    
+    # Create API service
+    cat > /etc/systemd/system/zivpn-api.service << 'EOF'
+[Unit]
+Description=ZiVPN API Service
+After=network.target zivpn.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/etc/zivpn
+ExecStart=/etc/zivpn/zivpn-api
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    
+    # Firewall API port
+    ufw allow ${ZIVPN_API_PORT}/tcp 2>/dev/null
+fi
+
 # Download menu manager
 echo ""
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
@@ -157,6 +214,7 @@ echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 run_silent "Downloading Menu Manager" "wget -q ${GITHUB_REPO}/menu.sh -O /usr/local/sbin/m-zivpn && chmod +x /usr/local/sbin/m-zivpn"
+sed -i 's/\r$//' /usr/local/sbin/m-zivpn
 
 # Firewall
 ufw allow ${ZIVPN_PORT}/udp 2>/dev/null
@@ -166,6 +224,11 @@ ufw allow ${ZIVPN_PORT}/tcp 2>/dev/null
 systemctl daemon-reload
 systemctl enable zivpn
 systemctl start zivpn
+
+if [[ "$install_type" == "1" ]]; then
+    systemctl enable zivpn-api
+    systemctl start zivpn-api
+fi
 
 # Alias
 echo "alias m-zivpn='bash /usr/local/sbin/m-zivpn'" >> /root/.bashrc
@@ -182,6 +245,12 @@ echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 echo -e "${CYAN}  Domain      : ${domain}${RESET}"
 echo -e "${CYAN}  UDP Port    : ${ZIVPN_PORT}${RESET}"
+
+if [[ "$install_type" == "1" ]]; then
+    echo -e "${CYAN}  API Port    : ${ZIVPN_API_PORT}${RESET}"
+    echo -e "${CYAN}  API Key     : ${API_KEY}${RESET}"
+fi
+
 echo -e "${CYAN}  Config      : $ZIVPN_DIR/config.json${RESET}"
 echo -e "${CYAN}  Users DB    : $ZIVPN_DIR/users.json${RESET}"
 echo ""
@@ -190,6 +259,11 @@ echo -e "    ${Green}m-zivpn${RESET}"
 echo ""
 echo -e "${BOLD}  Commands:${RESET}"
 echo -e "    ${YELLOW}systemctl start/stop/restart zivpn${RESET}"
+
+if [[ "$install_type" == "1" ]]; then
+    echo -e "    ${YELLOW}systemctl start/stop/restart zivpn-api${RESET}"
+fi
+
 echo ""
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo -e "${GRAY}  Telegram : https://t.me/PeyxDev${RESET}"
