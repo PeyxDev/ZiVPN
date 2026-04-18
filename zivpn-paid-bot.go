@@ -176,8 +176,8 @@ func startCreateUser(bot *tgbotapi.BotAPI, chatID int64, userID int64) {
 
 func processPayment(bot *tgbotapi.BotAPI, chatID int64, userID int64, days int, config *BotConfig) {
 	price := days * config.DailyPrice
-	if price < 500 {
-		sendMessage(bot, chatID, fmt.Sprintf("❌ Total harga Rp %d. Minimal transaksi adalah Rp 500.\nSilakan tambah durasi.", price))
+	if price < 267 {
+		sendMessage(bot, chatID, fmt.Sprintf("❌ Total harga Rp %d. Minimal transaksi adalah Rp 267.\nSilakan tambah durasi.", price))
 		return
 	}
 	orderID := fmt.Sprintf("ZIVPN-%d-%d", userID, time.Now().Unix())
