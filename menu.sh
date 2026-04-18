@@ -112,7 +112,7 @@ function generate_random_password() {
 function Zivpn_Banner() {
     clear
     echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
-    echo -e "${BLUE}│${WHITE}  \033[38;5;196m⁙\033[38;5;202m⁙\033[38;5;208m⁙\033[38;5;214m⁙\033[38;5;220m⁙\033[38;5;226m⁙\033[38;5;190m⁙\033[38;5;154m⁙\033[38;5;118m⁙\033[38;5;82m⁙\033[38;5;46m⁙\033[38;5;47m⁙\033[38;5;48m⁙\033[38;5;49m⁙${WHITE} ZIVPN MANAGER \033[38;5;87m⁙\033[38;5;86m⁙\033[38;5;85m⁙\033[38;5;84m⁙\033[38;5;83m⁙\033[38;5;44m⁙\033[38;5;43m⁙\033[38;5;42m⁙\033[38;5;41m⁙\033[38;5;40m⁙\033[38;5;39m⁙\033[38;5;38m⁙\033[38;5;37m⁙\033[38;5;36m⁙${WHITE}    ${BLUE}│${NC}"
+    echo -e "${BLUE}│${WHITE}  \033[38;5;196m⁙\033[38;5;202m⁙\033[38;5;208m⁙\033[38;5;214m⁙\033[38;5;220m⁙\033[38;5;226m⁙\033[38;5;190m⁙\033[38;5;154m⁙\033[38;5;118m⁙\033[38;5;82m⁙\033[38;5;46m⁙\033[38;5;47m⁙\033[38;5;48m⁙\033[38;5;49m⁙${WHITE} PX ZIVPN MANAGER \033[38;5;87m⁙\033[38;5;86m⁙\033[38;5;85m⁙\033[38;5;84m⁙\033[38;5;83m⁙\033[38;5;44m⁙\033[38;5;43m⁙\033[38;5;42m⁙\033[38;5;41m⁙\033[38;5;40m⁙\033[38;5;39m⁙\033[38;5;38m⁙\033[38;5;37m⁙\033[38;5;36m⁙${WHITE} ${BLUE}│${NC}"
     echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
 }
 
@@ -124,6 +124,9 @@ function Service_System_Operating() {
     echo -e "${BLUE}│${WHITE} ISP             : $ISP ${NC}"
     echo -e "${BLUE}│${WHITE} CITY            : $CITY ${NC}"
     echo -e "${BLUE}│${WHITE} DOMAIN          : $domain ${NC}"
+    echo -e "${BLUE}│${WHITE} API PORT        : $ZIVPN_API_PORT${NC}"
+    echo -e "${BLUE}│${WHITE} API KEY         : ${API_KEY}${NC}"
+    echo -e "${BLUE}│${WHITE} API URL         : http://$MYIP:$ZIVPN_API_PORT${NC}"
     echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
 }
 
@@ -139,16 +142,6 @@ function Service_Status() {
     fi
 }
 
-function API_Info() {
-    if [ -f "/etc/zivpn/apikey" ]; then
-        echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
-        echo -e "${BLUE}│${WHITE} API PORT       : $ZIVPN_API_PORT ${NC}"
-        echo -e "${BLUE}│${WHITE} API KEY        : ${YELLOW}${API_KEY}${NC}"
-        echo -e "${BLUE}│${WHITE} API URL        : ${CYAN}http://$MYIP:$ZIVPN_API_PORT${NC}"
-        echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
-    fi
-}
-
 function Details_Clients_Name() {
     echo -e "${BLUE}   ┌───────────────────────────────────────────┐${NC}"
     echo -e "${BLUE}   │${WHITE} CLIENTS    : ${USERNAME:-Unknown}${NC}"
@@ -159,15 +152,15 @@ function Details_Clients_Name() {
 
 function Acces_Use_Command() {
     echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
-    echo -e "${BLUE}│  1.${NC})${Green} Create User          ${BLUE}  6.${NC})${Green} Trial 30 Menit${RESET}   ${BLUE}│${NC}"
-    echo -e "${BLUE}│  2.${NC})${Green} Create Random PW     ${BLUE}  7.${NC})${Green} Install Bot${RESET}      ${BLUE}│${NC}"
-    echo -e "${BLUE}│  3.${NC})${Green} Delete User          ${BLUE}  8.${NC})${Green} Install Pakasir${RESET}  ${BLUE}│${NC}"
-    echo -e "${BLUE}│  4.${NC})${Green} Renew User           ${BLUE}  9.${NC})${Green} Restart Service${RESET}  ${BLUE}│${NC}"
-    echo -e "${BLUE}│  5.${NC})${Green} List Users           ${BLUE}  10.${NC})${Green} Service Status${RESET}  ${BLUE}│${NC}"
+    echo -e "${BLUE}│  01.${NC})${WHITE} Create User        ${BLUE}  06.${NC})${WHITE} Trial 30 Menit${RESET}  ${BLUE}│${NC}"
+    echo -e "${BLUE}│  02.${NC})${WHITE} Create Random PW   ${BLUE}  07.${NC})${WHITE} Install Bot${RESET}     ${BLUE}│${NC}"
+    echo -e "${BLUE}│  03.${NC})${WHITE} Delete User        ${BLUE}  08.${NC})${WHITE} Install Pakasir${RESET} ${BLUE}│${NC}"
+    echo -e "${BLUE}│  04.${NC})${WHITE} Renew User         ${BLUE}  09.${NC})${WHITE} Restart Service${RESET} ${BLUE}│${NC}"
+    echo -e "${BLUE}│  05.${NC})${WHITE} List Users         ${BLUE}  10.${NC})${WHITE} Service Status${RESET}  ${BLUE}│${NC}"
     echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
-    echo -e "${BLUE}  ┌───────────────────────────────────────────────┐${NC}"
-    echo -e "${BLUE}  │  ${RED}x.${NC})${RED} Exit${NC}                                         ${BLUE}│${NC}"
-    echo -e "${BLUE}  └───────────────────────────────────────────────┘${NC}"
+    echo -e "${BLUE} ┌───────────────────────────────────────────────┐${NC}"
+    echo -e "${BLUE} │  ${RED}x.${NC})${RED} Exit${NC}                                     ${BLUE}│${NC}"
+    echo -e "${BLUE} └───────────────────────────────────────────────┘${NC}"
 }
 
 function create_user() {
@@ -749,7 +742,6 @@ CEKIP
 Zivpn_Banner
 Service_System_Operating
 Service_Status
-API_Info
 Details_Clients_Name
 Acces_Use_Command
 Select_Display
