@@ -1,3 +1,4 @@
+cat > uninstall.sh << 'EOF'
 #!/bin/bash
 
 RED="\033[1;31m"
@@ -46,3 +47,6 @@ sed -i '/alias m-zivpn/d' /root/.bashrc
 echo ""
 echo -e "${GREEN}✅ ZiVPN has been uninstalled completely!${RESET}"
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+EOF
+
+chmod +x uninstall.sh
