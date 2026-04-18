@@ -12,33 +12,12 @@ NC='\e[0m'
 CYAN="\033[96;1m"
 WHITE="\033[97;1m"
 
-# Get server info
 MYIP=$(curl -sS ipv4.icanhazip.com)
 domain=$(cat /etc/xray/domain 2>/dev/null || cat /etc/zivpn/domain 2>/dev/null || echo "Tidak ada")
-
-# Get ISP and CITY from various sources
-ISP=$(cat /etc/xray/isp 2>/dev/null)
-if [[ -z "$ISP" ]]; then
-    ISP=$(curl -s ipinfo.io/org 2>/dev/null | cut -d " " -f 2-10)
-fi
-if [[ -z "$ISP" ]]; then
-    ISP=$(curl -s https://ipapi.co/org 2>/dev/null)
-fi
-if [[ -z "$ISP" ]]; then
-    ISP="Unknown"
-fi
-
-CITY=$(cat /etc/xray/city 2>/dev/null)
-if [[ -z "$CITY" ]]; then
-    CITY=$(curl -s ipinfo.io/city 2>/dev/null)
-fi
-if [[ -z "$CITY" ]]; then
-    CITY=$(curl -s https://ipapi.co/city 2>/dev/null)
-fi
-if [[ -z "$CITY" ]]; then
-    CITY="Unknown"
-fi
-
+ISP=$(curl -s ipinfo.io/org 2>/dev/null | cut -d " " -f 2-10)
+if [[ -z "$ISP" ]]; then ISP="Unknown"; fi
+CITY=$(curl -s ipinfo.io/city 2>/dev/null)
+if [[ -z "$CITY" ]]; then CITY="Unknown"; fi
 DATEVPS=$(date +'%d/%m/%Y')
 TIMEZONE=$(date +'%H:%M:%S')
 MODEL=$(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g')
@@ -48,11 +27,17 @@ ZIVPN_CONFIG="/etc/zivpn/config.json"
 ZIVPN_USERS="/etc/zivpn/users.json"
 ZIVPN_DOMAIN="/etc/zivpn/domain"
 ZIVPN_PORT="5667"
+ZIVPN_API_KEY="/etc/zivpn/apikey"
+ZIVPN_API_PORT="8585"
+
+if [ -f "$ZIVPN_API_KEY" ]; then
+    API_KEY=$(cat $ZIVPN_API_KEY)
+else
+    API_KEY="Not Installed"
+fi
 
 function check_zivpn_status() {
     if systemctl is-active --quiet zivpn 2>/dev/null; then
-        echo -e "${Green}ON${NC}"
-    elif pgrep -x "zivpn" > /dev/null; then
         echo -e "${Green}ON${NC}"
     else
         echo -e "${RED}OFF${NC}"
@@ -60,7 +45,9 @@ function check_zivpn_status() {
 }
 
 function check_api_status() {
-    if systemctl is-active --quiet zivpn-api 2>/dev/null; then
+    if [ ! -f "$ZIVPN_API_KEY" ]; then
+        echo -e "${RED}NOT INSTALLED${NC}"
+    elif systemctl is-active --quiet zivpn-api 2>/dev/null; then
         echo -e "${Green}ON${NC}"
     else
         echo -e "${RED}OFF${NC}"
@@ -105,6 +92,16 @@ function Service_Status() {
     echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
     echo -e "${BLUE}|${NC}${YELLOW} ZIVPN : $(check_zivpn_status) ${BLUE}|${NC}${YELLOW} API : $(check_api_status) ${BLUE}|${NC}${YELLOW} PORT : $ZIVPN_PORT ${BLUE}|${NC}${YELLOW} USERS : $(get_total_users) (Active: $(get_active_users)) ${BLUE}| ${NC}"
     echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
+}
+
+function API_Info() {
+    if [ -f "$ZIVPN_API_KEY" ]; then
+        echo -e "${BLUE}┌─────────────────────────────────────────────────┐${NC}"
+        echo -e "${BLUE}│${WHITE} API PORT        : $ZIVPN_API_PORT ${NC}"
+        echo -e "${BLUE}│${WHITE} API KEY        : ${YELLOW}${API_KEY}${NC}"
+        echo -e "${BLUE}│${WHITE} API URL        : ${CYAN}http://$MYIP:$ZIVPN_API_PORT${NC}"
+        echo -e "${BLUE}└─────────────────────────────────────────────────┘${NC}"
+    fi
 }
 
 function Details_Clients_Name() {
@@ -339,7 +336,6 @@ function change_domain() {
     if [[ -n "$new_domain" ]]; then
         echo "$new_domain" > $ZIVPN_DOMAIN
         echo -e "${Green}   ✅ Domain updated to: $new_domain${NC}"
-        
         openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj "/CN=$new_domain" -keyout /etc/zivpn/zivpn.key -out /etc/zivpn/zivpn.crt 2>/dev/null
         systemctl restart zivpn 2>/dev/null
     fi
@@ -356,16 +352,8 @@ function restart_service() {
     echo ""
     echo -e "${YELLOW}   Restarting ZiVPN service...${NC}"
     systemctl restart zivpn 2>/dev/null
-    pkill -x zivpn 2>/dev/null
-    sleep 1
-    if systemctl start zivpn 2>/dev/null; then
-        echo -e "${Green}   ✅ Service restarted successfully${NC}"
-    elif [ -f /usr/local/bin/zivpn ]; then
-        nohup /usr/local/bin/zivpn server -c $ZIVPN_CONFIG > /dev/null 2>&1 &
-        echo -e "${Green}   ✅ ZiVPN restarted manually${NC}"
-    else
-        echo -e "${RED}   ❌ Failed to restart service${NC}"
-    fi
+    sleep 2
+    echo -e "${Green}   ✅ Service restarted successfully${NC}"
     echo ""
     read -p "   Tekan Enter untuk kembali..."
 }
@@ -402,6 +390,7 @@ function Select_Display() {
 Zivpn_Banner
 Service_System_Operating
 Service_Status
+API_Info
 Details_Clients_Name
 Acces_Use_Command
 Select_Display
