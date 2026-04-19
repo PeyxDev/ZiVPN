@@ -54,6 +54,121 @@ run_silent() {
   fi
 }
 
+# ==================== PING OPTIMIZATION ====================
+optimize_ping() {
+    echo -e "${CYAN}┌───────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│      Optimizing Network for Stable Ping       │${NC}"
+    echo -e "${CYAN}└───────────────────────────────────────────────┘${NC}"
+    
+    # Backup original sysctl.conf
+    cp /etc/sysctl.conf /etc/sysctl.conf.bak
+    
+    # Optimasi TCP untuk ping stabil
+    cat >> /etc/sysctl.conf <<'END'
+
+# ========== PING OPTIMIZATION ZIVPN ==========
+# Mengurangi latency dan packet loss
+net.ipv4.tcp_timestamps = 1
+net.ipv4.tcp_sack = 1
+net.ipv4.tcp_window_scaling = 1
+net.ipv4.tcp_no_metrics_save = 1
+net.ipv4.tcp_moderate_rcvbuf = 1
+
+# Optimasi untuk koneksi real-time
+net.ipv4.tcp_low_latency = 1
+net.ipv4.tcp_thin_linear_timeouts = 1
+net.ipv4.tcp_thin_dupack = 1
+
+# Mengurangi buffer untuk latency rendah
+net.core.rmem_max = 8388608
+net.core.wmem_max = 8388608
+net.core.rmem_default = 65536
+net.core.wmem_default = 65536
+net.ipv4.tcp_rmem = 4096 87380 8388608
+net.ipv4.tcp_wmem = 4096 65536 8388608
+
+# Optimasi BBR untuk ping stabil
+net.core.default_qdisc = fq
+net.ipv4.tcp_congestion_control = bbr
+net.core.netdev_max_backlog = 5000
+net.ipv4.tcp_max_syn_backlog = 1024
+net.ipv4.tcp_slow_start_after_idle = 0
+
+# Anti packet loss
+net.ipv4.tcp_reordering = 3
+net.ipv4.tcp_retries1 = 3
+net.ipv4.tcp_retries2 = 5
+net.ipv4.tcp_syn_retries = 2
+net.ipv4.tcp_synack_retries = 2
+
+# Optimasi buffer jaringan
+net.ipv4.tcp_mem = 65536 131072 262144
+net.ipv4.udp_mem = 65536 131072 262144
+net.core.optmem_max = 65536
+
+# MTU Discovery untuk mengurangi fragmentasi
+net.ipv4.tcp_mtu_probing = 1
+
+# Fast recovery
+net.ipv4.tcp_fastopen = 3
+net.ipv4.tcp_early_retrans = 1
+
+# Reduce time wait
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_fin_timeout = 15
+
+# Routing optimization
+net.ipv4.conf.all.rp_filter = 2
+net.ipv4.conf.default.rp_filter = 2
+net.ipv4.ip_no_pmtu_disc = 0
+
+# Optimasi untuk UDP (karena ZiVPN menggunakan UDP)
+net.ipv4.udp_rmem_min = 16384
+net.ipv4.udp_wmem_min = 16384
+# ==============================================
+END
+
+    # Apply sysctl settings
+    sysctl -p &>/dev/null
+    
+    # Optimasi network interface queue
+    for iface in $(ls /sys/class/net/ | grep -v lo); do
+        if [ -f /sys/class/net/$iface/queues/rx-0/rps_cpus ]; then
+            echo "f" > /sys/class/net/$iface/queues/rx-0/rps_cpus
+        fi
+        if [ -f /sys/class/net/$iface/queues/tx-0/xps_cpus ]; then
+            echo "f" > /sys/class/net/$iface/queues/tx-0/xps_cpus
+        fi
+    done
+    
+    # Set CPU governor to performance untuk mengurangi latency
+    if [ -f /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]; then
+        echo "performance" | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor &>/dev/null
+    fi
+    
+    # Disable IPv6 jika tidak diperlukan (mengurangi latency)
+    if [ -f /etc/sysctl.d/99-disable-ipv6.conf ]; then
+        echo "# IPv6 disabled for ping stability" > /etc/sysctl.d/99-disable-ipv6.conf
+        echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.d/99-disable-ipv6.conf
+        echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.d/99-disable-ipv6.conf
+        sysctl -p /etc/sysctl.d/99-disable-ipv6.conf &>/dev/null
+    fi
+    
+    # Optimasi limits untuk koneksi stabil
+    cat >> /etc/security/limits.conf <<'END'
+# Optimasi untuk ping stabil
+* soft nofile 65535
+* hard nofile 65535
+* soft nproc 65535
+* hard nproc 65535
+root soft nofile 65535
+root hard nofile 65535
+END
+
+    echo -e "${Green}✓ Network optimized for stable ping!${NC}"
+    sleep 2
+}
+
 # ==================== CEKIP FUNCTION ====================
 CEKIP () {
 MYIP=$(curl -sS ipv4.icanhazip.com)
@@ -146,6 +261,9 @@ if ! command -v node &> /dev/null; then
   print_done "Installing Node.js 20.x"
 fi
 
+# Jalankan optimasi ping
+optimize_ping
+
 echo ""
 echo -e "${purple} ┌───────────────────────────────────────────────┐${neutral}"
 echo -e "${purple} │${CYAN}         Domain Configuration${FONT}"
@@ -177,24 +295,6 @@ run_silent "Configuring" "wget -q ${GITHUB_REPO}/config.json -O /etc/zivpn/confi
 sed -i "s/:5667/:${ZIVPN_UDP_PORT}/" /etc/zivpn/config.json
 
 run_silent "Generating SSL" "openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj '/C=ID/ST=Jawa Barat/L=Bandung/O=AutoFTbot/OU=IT Department/CN=$domain' -keyout /etc/zivpn/zivpn.key -out /etc/zivpn/zivpn.crt 2>/dev/null"
-
-# Sysctl optimization
-cat >> /etc/sysctl.conf <<END
-net.core.default_qdisc=fq
-net.ipv4.tcp_congestion_control=bbr
-net.ipv4.ip_forward=1
-net.core.rmem_max=16777216
-net.core.wmem_max=16777216
-net.core.rmem_default=16777216
-net.core.wmem_default=16777216
-net.core.optmem_max=65536
-net.core.somaxconn=65535
-net.ipv4.tcp_rmem=4096 87380 16777216
-net.ipv4.tcp_wmem=4096 65536 16777216
-net.ipv4.tcp_fastopen=3
-fs.file-max=1000000
-END
-sysctl -p &>/dev/null
 
 # Create systemd service for ZiVPN
 cat <<EOF > /etc/systemd/system/zivpn.service
@@ -377,6 +477,13 @@ echo "alias menu='bash /usr/local/bin/menu'" >> /root/.bashrc
 echo -e "${Green}  ✓ Auto menu on login has been configured${NC}"
 echo ""
 
+# Tambahkan cron job untuk monitor ping stabil
+cat > /etc/cron.d/ping-optimizer << 'EOF'
+# Optimasi ping setiap jam
+0 * * * * root /sbin/sysctl -p >/dev/null 2>&1
+*/30 * * * * root echo "performance" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null
+EOF
+
 rm -f "$0" install.tmp install.log &>/dev/null
 
 clear
@@ -396,6 +503,10 @@ echo ""
 echo -e "${purple} ┌───────────────────────────────────────────────┐${neutral}"
 echo -e "${purple} │${YELLOW}  Menu Manager:${FONT}"
 echo -e "${purple} │${Green}    menu${FONT}"
+echo -e "${purple} └───────────────────────────────────────────────┘${neutral}"
+echo ""
+echo -e "${purple} ┌───────────────────────────────────────────────┐${neutral}"
+echo -e "${purple} │${Green}  ✓ Network Optimized for Stable Ping${FONT}"
 echo -e "${purple} └───────────────────────────────────────────────┘${neutral}"
 echo ""
 echo -e "${purple} ┌───────────────────────────────────────────────┐${neutral}"
