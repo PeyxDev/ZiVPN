@@ -1,202 +1,228 @@
-# ZiVPN UDP Tunnel
+# 🚀 ZiVPN UDP Tunnel
+### *Autoscript by PeyxDev*
 
-**ZiVPN UDP Tunnel** adalah solusi tunneling UDP premium dengan manajemen yang mudah, aman, dan otomatis. Dilengkapi dengan **API Server** dan **Telegram Bot** untuk pengelolaan user tanpa ribet.
+> **Solusi tunneling UDP premium** dengan manajemen modern, aman, dan otomatis. Kelola server VPN Anda melalui **API powerful** atau **Bot Telegram** yang cerdas dengan sistem pembayaran **QRIS Dinamis**.
 
----
-
-## 🌟 Fitur Utama
-
-*   **Minimalist CLI**: Installer dengan tampilan modern, bersih, dan elegan.
-*   **Headless Management**: Manajemen user sepenuhnya via API atau Bot (tanpa menu CLI jadul).
-*   **Telegram Bot Integration**: Kelola user (Create, Delete, Renew, List) langsung dari Telegram.
-*   **Dynamic Security**: API Key dan sertifikat SSL digenerate otomatis saat instalasi.
-*   **High Performance**: Menggunakan core UDP ZiVPN yang dioptimalkan untuk Linux AMD64.
+![Version](https://img.shields.io/badge/version-2.0.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Node](https://img.shields.io/badge/Node.js-20.x-darkgreen)
 
 ---
 
-## 💳 Persiapan Payment Gateway (Pakasir)
-Jika Anda ingin menggunakan **Paid Bot**, Anda wajib memiliki akun Pakasir.
+## ✨ Fitur Unggulan
 
-1.  **Registrasi**: Daftar akun di [https://pakasir.com](https://pakasir.com).
-2.  **Buat Proyek**: Buat proyek baru di dashboard Pakasir.
-3.  **Ambil Kredensial**:
-    *   **Project Slug**: ID unik proyek Anda (bisa dilihat di URL atau detail proyek).
-    *   **API Key**: Kunci rahasia untuk akses API (ada di menu Pengaturan Proyek).
-4.  **Saldo**: Pastikan akun Pakasir Anda aktif (untuk menerima pembayaran QRIS).
+| Fitur | Keterangan |
+| :--- | :--- |
+| **Instalasi Modern** | Tampilan *installer* yang bersih, elegan, dan informatif dengan animasi loading. |
+| **Manajemen Headless** | Kelola user sepenuhnya via **API** atau **Bot Telegram**, tanpa perlu ribet di CLI. |
+| **Bot Telegram Canggih** | Semua fungsi (Tambah, Hapus, Perpanjang, Lihat User) bisa dilakukan dari Telegram. |
+| **QRIS Dinamis** | Pembayaran otomatis dengan QRIS dinamis, nominal sesuai durasi yang dipilih. |
+| **Upload Bukti Langsung** | Setelah bayar, upload bukti dan akun LANGSUNG dibuat tanpa menunggu admin. |
+| **Keamanan Dinamis** | **API Key** dan **Sertifikat SSL** di-generate secara otomatis saat instalasi. |
+| **Kinerja Tinggi** | Menggunakan *core* UDP ZiVPN yang dioptimalkan untuk lingkungan Linux AMD64. |
+| **API Terintegrasi** | REST API siap pakai untuk integrasi dengan panel atau aplikasi Anda. |
 
 ---
 
-## 📥 Instalasi
+## 💳 Sistem Pembayaran QRIS Dinamis
 
-Jalankan perintah berikut di terminal VPS Anda (sebagai root):
+Bot menggunakan **QRIS Dinamis** yang terintegrasi dengan API eksternal untuk generate QR Code secara real-time.
 
-```bash
+### 🔄 Alur Pembayaran:
+1. User memilih durasi berlangganan
+2. Bot menghitung total harga (`Durasi x Harga Harian`)
+3. Bot memanggil API QRIS Dinamis untuk generate QR Code
+4. QR Code dikirim ke user dengan nominal yang sudah ditentukan
+5. User melakukan pembayaran via QRIS
+6. User mengupload bukti pembayaran
+7. **Akun LANGSUNG dibuat secara otomatis** (tanpa konfirmasi admin)
+
+### 📌 Konfigurasi QRIS di `bot-config.json`:
+```json
+{
+    "qris": {
+        "static_string": "00020101021126610014COM.GO-JEK.WWW...",
+        "api_url": "https://api-mininxd.vercel.app/qris",
+        "icon_url": "https://pxstore.web.id/assets/images/icon.ico",
+        "qr_size": 400,
+        "icon_size": 80
+    }
+}
+📥 Instalasi
+Jalankan perintah satu baris ini di terminal VPS Anda sebagai user root:
+
+bash
 wget -q https://raw.githubusercontent.com/PeyxDev/ZiVPN/main/install.sh && chmod +x install.sh && ./install.sh
-```
+⚙️ Langkah Konfigurasi Instalasi
+Anda akan diminta memasukkan informasi berikut:
 
-### Konfigurasi Saat Instalasi
-Saat script berjalan, Anda akan diminta memasukkan:
-1.  **Domain**: Wajib diisi untuk generate sertifikat SSL (contoh: `vpn.domain.com`).
-2.  **API Key**:
-    *   Tekan **Enter** untuk menggunakan key acak yang aman (Recommended).
-    *   Atau ketik key manual jika diinginkan.
-3.  **Telegram Bot** (Opsional):
-    *   **Bot Token**: Token dari @BotFather.
-    *   **Admin ID**: ID Telegram Anda (cek di @userinfobot).
-    *   **Bot Type**:
-        *   **Free**: Bot standar (Admin Only / Public Mode).
-        *   **Paid**: Bot dengan integrasi Payment Gateway (Pakasir).
-    *   **Paid Bot Config** (Jika memilih Paid):
-        *   **Pakasir Slug**: Slug project dari dashboard Pakasir.
-        *   **Pakasir API Key**: API Key dari dashboard Pakasir.
-        *   **Daily Price**: Harga per hari (IDR).
-        *   **Default IP Limit**: Batas maksimal device per akun.
+Domain: Wajib diisi! Digunakan untuk generate sertifikat SSL (contoh: vpn.domain.com).
 
----
+Bot Token: Token dari @BotFather.
 
-## 🤖 Telegram Bot Usage
+Admin ID: ID Telegram Anda (cek di @userinfobot).
 
-### Free Bot
-*   **/start**: Menampilkan Menu Utama.
-*   **Create/Delete/Renew**: Manajemen user manual.
-*   **Public/Private Mode**: Toggle akses bot untuk umum atau hanya admin.
+Harga Harian: Harga per hari dalam Rupiah (IDR).
 
-### Paid Bot (Pakasir)
-Bot ini memungkinkan user membeli akun secara otomatis menggunakan QRIS.
-*   **Flow Pembelian**:
-    1.  User klik **Beli Akun Premium**.
-    2.  User memasukkan username dan durasi.
-    3.  Bot menghitung harga (`Durasi * Harga Harian`) dan mengirim QRIS.
-    4.  User membayar dan klik **Cek Pembayaran**.
-    5.  Jika sukses, akun dibuat otomatis.
-*   **Minimum Transaksi**: Rp 500 (Ketentuan Pakasir).
+Batas IP Default: Batas maksimal perangkat yang terhubung per akun.
 
-Jika Anda mengaktifkan bot, Anda bisa mengelola VPN langsung dari chat Telegram.
+QRIS Configuration (Opsional):
 
-*   **/start**: Menampilkan Menu Utama dengan tombol interaktif.
-*   **Create User**: Membuat user baru (Input Username -> Input Durasi).
-*   **Delete User**: Menghapus user (Input Username).
-*   **Renew User**: Memperpanjang masa aktif user.
-*   **List Users**: Melihat daftar user aktif dan expired.
-*   **System Info**: Cek IP, Domain, dan status service.
+QRIS String: Tekan Enter untuk menggunakan default
 
-> **Note**: Bot hanya merespon perintah dari **Admin ID** yang didaftarkan saat instalasi.
+API URL: Tekan Enter untuk menggunakan default
 
----
+Icon URL: Tekan Enter untuk menggunakan default (atau kosongkan jika tidak ingin icon)
 
-## 🔌 API Documentation
+🤖 Panduan Bot Telegram
+📌 Menu Utama Bot:
+🛒 BELI AKUN PREMIUM - Membeli akun via QRIS Dinamis
 
-API berjalan di port `8080`. Gunakan **API Key** yang Anda atur saat instalasi pada header `X-API-Key`.
+🎫 TRIAL 30 MENIT - Mencoba akun gratis 30 menit
 
-**Base URL**: `http://<IP-VPS>:8080`
-**Header**: `X-API-Key: <YOUR-API-KEY>`
+📊 SYSTEM INFO - Informasi server dan sistem
 
-### 1. Create User
-Membuat user baru.
-*   **Endpoint**: `/api/user/create`
-*   **Method**: `POST`
-*   **Body**:
-    ```json
-    {
-        "password": "user123",
-        "days": 30,
-        "ip_limit": 2
-    }
-    ```
-    *(Note: `ip_limit` 0 = Unlimited)*
-*   **Response**:
-    ```json
-    {
-        "success": true,
-        "message": "User berhasil dibuat",
-        "data": {
-            "password": "user123",
-            "expired": "2024-12-31",
-            "ip_limit": "2",
-            "domain": "vpn.domain.com"
-        }
-    }
-    ```
+📞 HUBUNGI ADMIN - Kontak admin via Telegram
 
-### 2. Delete User
-Menghapus user.
-*   **Endpoint**: `/api/user/delete`
-*   **Method**: `POST`
-*   **Body**:
-    ```json
-    { "password": "user123" }
-    ```
+💎 Flow Pembelian Akun Premium:
+Klik 🛒 BELI AKUN PREMIUM
 
-### 3. Renew User
-Memperpanjang durasi user.
-*   **Endpoint**: `/api/user/renew`
-*   **Method**: `POST`
-*   **Body**:
-    ```json
-    { "password": "user123", "days": 30 }
-    ```
+Masukkan Password/Username (3-20 karakter)
 
-### 4. List Users
-Melihat semua user.
-*   **Endpoint**: `/api/users`
-*   **Method**: `GET`
-*   **Response Data Example**:
-    ```json
-    [
-        {
-            "password": "user123",
-            "expired": "2024-12-31",
-            "status": "Active",
-            "ip_limit": 2
-        }
-    ]
-    ```
+Masukkan Durasi (1-365 hari)
 
-### 5. System Info
-Melihat informasi server.
-*   **Endpoint**: `/api/info`
-*   **Method**: `GET`
+Bot mengirimkan QRIS Dinamis dengan nominal sesuai durasi
 
----
+User scan QRIS dan melakukan pembayaran
 
-## � Postman Collection
-Anda dapat mengimpor koleksi API lengkap ke Postman menggunakan file JSON berikut:
-[Download zivpn_postman_collection.json](zivpn_postman_collection.json)
+User mengupload foto bukti pembayaran
 
----
+Akun LANGSUNG AKTIF - Password dan detail dikirim ke user
 
-## �🛠️ Pemecahan Masalah (Troubleshooting)
+🎫 Trial 30 Menit:
+Gratis, tanpa pembayaran
 
-### 1. Log "TCP error" di Jurnal
-Jika Anda melihat log seperti:
-`ERROR TCP error {"addr": "140.213.xx.xx:..."}`
+IP Limit: 1 Device
 
-*   **Penyebab**: Koneksi client tidak stabil (sering terjadi pada jaringan seluler/Indosat) atau masalah MTU.
-*   **Solusi**:
-    *   Ini biasanya **bukan error server**. Jika user masih bisa connect, abaikan saja.
-    *   Jika user sering disconnect, sarankan user menurunkan **MTU** di aplikasi client mereka (coba `1100` atau `1200`).
+Akun otomatis kadaluarsa setelah 30 menit
 
-### 2. Bot Telegram Tidak Merespon
-*   Pastikan service berjalan: `systemctl status zivpn-bot`
-*   Cek log error: `journalctl -u zivpn-bot -f`
-*   Pastikan **Bot Token** dan **Admin ID** benar di `/etc/zivpn/bot-config.json`.
-*   Restart bot: `systemctl restart zivpn-bot`
+👑 Admin Commands:
+Command	Fungsi
+/users	Lihat semua user terdaftar
+/stats	Lihat statistik user (Total, Aktif, Expired, Locked)
+/create username days [iplimit]	Buat user manual
+/delete username	Hapus user
+🔌 Dokumentasi API
+API server berjalan di port 8585.
 
-### 3. API Error "Unauthorized"
-*   Pastikan Anda menggunakan **API Key** yang benar di header `X-API-Key`.
-*   Cek key yang aktif di server: `cat /etc/zivpn/apikey`
+Informasi Dasar:
+Base URL: http://<IP-VPS>:8585
 
-### 4. Service Gagal Start
-*   Cek status: `systemctl status zivpn`
-*   Pastikan port `5667` (UDP) dan `8080` (TCP) tidak terpakai aplikasi lain.
-*   Cek config: `cat /etc/zivpn/config.json`
+Header: X-API-Key: <API-KEY-ANDA>
 
----
+Response Format: JSON
 
-## 🗑️ Uninstall
+Endpoint API:
+Method	Endpoint	Deskripsi
+GET	/api/health	Cek kesehatan API
+GET	/api/system/info	Informasi sistem server
+GET	/api/users	Lihat semua user
+GET	/api/users/stats	Statistik user
+POST	/api/user/create	Buat user baru
+POST	/api/user/delete	Hapus user
+POST	/api/user/renew	Perpanjang user
+POST	/api/user/trial	Buat trial 30 menit
+POST	/api/user/lock	Kunci user
+POST	/api/user/unlock	Buka kunci user
+GET	/api/service/status	Status service
+Contoh API Call:
+bash
+# Create user
+curl -X POST http://localhost:8585/api/user/create \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"password":"user123","days":30,"ip_limit":2}'
 
+# List users
+curl -H "X-API-Key: YOUR_API_KEY" \
+  http://localhost:8585/api/users
+
+# System info
+curl -H "X-API-Key: YOUR_API_KEY" \
+  http://localhost:8585/api/system/info
+🛠️ Manajemen Service
+Perintah Dasar:
+bash
+# Start semua service
+systemctl start zivpn zivpn-api-js zivpn-bot
+
+# Stop semua service
+systemctl stop zivpn zivpn-api-js zivpn-bot
+
+# Restart semua service
+systemctl restart zivpn zivpn-api-js zivpn-bot
+
+# Cek status service
+systemctl status zivpn zivpn-api-js zivpn-bot
+
+# Lihat log
+journalctl -u zivpn -f
+journalctl -u zivpn-api-js -f
+journalctl -u zivpn-bot -f
+Lokasi File Penting:
+File	Lokasi	Keterangan
+Konfigurasi Utama	/etc/zivpn/config.json	Port, SSL, dll
+Database User	/etc/zivpn/users.json	Data semua user
+API Key	/etc/zivpn/apikey	Kunci untuk akses API
+Domain	/etc/zivpn/domain	Domain server
+Konfigurasi Bot	/etc/zivpn/bot-config.json	Token, harga, QRIS
+Script API	/etc/zivpn/api/api.js	Source code API
+Script Bot	/etc/zivpn/bot/bot-seller.js	Source code bot
+🐛 Pemecahan Masalah
+1. Bot Tidak Merespon
+bash
+# Cek status
+systemctl status zivpn-bot
+
+# Restart bot
+systemctl restart zivpn-bot
+
+# Cek log error
+journalctl -u zivpn-bot -n 50
+2. API Error 401 Unauthorized
+bash
+# Cek API Key
+cat /etc/zivpn/apikey
+
+# Test API
+curl -H "X-API-Key: $(cat /etc/zivpn/apikey)" \
+  http://localhost:8585/api/health
+3. QRIS Tidak Muncul
+bash
+# Cek konfigurasi QRIS
+cat /etc/zivpn/bot-config.json | grep -A 5 "qris"
+
+# Test API QRIS
+curl "https://api-mininxd.vercel.app/qris?qris=test&nominal=10000"
+4. Service Gagal Start
+bash
+# Cek log detail
+journalctl -u zivpn-api-js -n 50
+
+# Cek port 8585
+netstat -tlnp | grep 8585
+
+# Jalankan manual untuk debug
+cd /etc/zivpn/api && node api.js
+🗑️ Uninstall
 Untuk menghapus ZiVPN, API, Bot, dan semua konfigurasi:
 
-```bash
+bash
 wget -q https://raw.githubusercontent.com/PeyxDev/ZiVPN/main/uninstall.sh && chmod +x uninstall.sh && ./uninstall.sh
-```
+📞 Dukungan
+Telegram: @PeyxDev
+
+GitHub: PeyxDev/ZiVPN
+
+<div align="center"> <sub>Built with ❤️ by <b>PeyxDev</b></sub> </div> ```
+This response is AI-generated, for reference only.
