@@ -48,6 +48,7 @@ Bot menggunakan **QRIS Dinamis** yang terintegrasi dengan API eksternal untuk ge
         "icon_size": 80
     }
 }
+```
 📥 Instalasi
 Jalankan perintah satu baris ini di terminal VPS Anda sebagai user root:
 
