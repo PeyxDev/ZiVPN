@@ -45,7 +45,6 @@ Sistem ini menghilangkan kebutuhan konfirmasi manual oleh admin.
     "qris": {
         "static_string": "00020101021126610014COM.GO-JEK.WWW...",
         "api_url": "https://api-mininxd.vercel.app/qris",
-        "icon_url": "https://pxstore.web.id/assets/images/icon.ico",
         "qr_size": 400,
         "icon_size": 80
     }
