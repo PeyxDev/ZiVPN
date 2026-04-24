@@ -15,7 +15,7 @@
 <p align="center">
   <img src="preview.png" alt="ZiVPN Preview" width="80%">
   <br>
-  <sub><i>ZiVPN UDP Tunnel - Bot Telegram & QRIS Payment System</i></sub>
+  <sub><i>ZiVPN UDP Manager System</i></sub>
 </p>
 
 ---
