@@ -10,6 +10,16 @@
 
 ---
 
+## 📸 Preview
+
+<p align="center">
+  <img src="preview.png" alt="ZiVPN Preview" width="80%">
+  <br>
+  <sub><i>ZiVPN UDP Tunnel - Bot Telegram & QRIS Payment System</i></sub>
+</p>
+
+---
+
 ## ⚡ Deskripsi Utama
 **ZiVPN** adalah solusi tunneling UDP premium yang dirancang untuk kecepatan dan kemudahan manajemen. Kelola server VPN Anda secara modern melalui **API powerful** atau **Bot Telegram** cerdas yang terintegrasi dengan sistem pembayaran **QRIS Dinamis** otomatis.
 
